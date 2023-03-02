@@ -1,12 +1,20 @@
 export namespace date {
     export namespace format {
-        export function MMDDYYYY(date: Date) {
-            let year = date.getFullYear();
-            let month = (date.getMonth()+1).toString().padStart(2,"0");
-            let day = date.getDate().toString().padStart(2,"0");
-            return `${month}/${day}/${year}`;
+        /**
+         * Format date in MM/DD/YYYY format
+         * @param date 
+         * @returns 
+         */
+        export function MM_DD_YYYY(date: Date) {
+            return date.toLocaleDateString('en-US', {year: "numeric", month: "2-digit", day: "2-digit"});
         }
 
+        /**
+         * Format date in YYYYMMDD_HHmmss format.
+         * Used as `timecode` parameter in MLB API
+         * @param date 
+         * @returns 
+         */
         export function timecode(date: Date) {
             let utcYear = date.getUTCFullYear();
             let utcMonth = (date.getUTCMonth()+1).toString().padStart(2,"0");
