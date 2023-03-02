@@ -40,6 +40,7 @@ export class GameThreadContentService {
         let embed = null;
         try {
             embed = new EmbedBuilder()
+                .setAuthor({ name: "Major League Baseball", iconURL: this.getSportIcon(1, 100) })
                 .setTitle(this.getSummaryTitle(gameInfo))
                 .setURL(this.getMLBGameDayLink(gameInfo.gamePk || 0))
                 .setThumbnail(this.getMatchupIcon(gameInfo, 100))
@@ -101,6 +102,14 @@ export class GameThreadContentService {
         let awayTeamId = gameInfo.gameData?.teams?.away?.id;
 
         return `https://midfield.mlbstatic.com/v1/teams-matchup/${awayTeamId}-${homeTeamId}/ar_1:1/w_${size}`;
+    }
+
+    public getSportIcon(id: number, size: number) {
+        return `https://midfield.mlbstatic.com/v1/sport/${id}/spots/${size}`;
+    }
+
+    public getLeagueIcon(id: number, size: number) {
+        return `https://midfield.mlbstatic.com/v1/league/${id}/spots/${size}`;
     }
 
     public getTeamIcon(id: number, size: number) {
