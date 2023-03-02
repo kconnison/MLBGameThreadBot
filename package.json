@@ -4,8 +4,8 @@
   "description": "A Discord bot for MLB game threads",
   "type": "module",
   "scripts": {
-    "start:dev": "concurrently \"tsc -w\" \"nodemon --experimental-specifier-resolution=node dist/index.js\"",
-    "start": "npm run build && node --experimental-specifier-resolution=node dist/index.js",
+    "start:dev": "concurrently \"tsc -w\" \"nodemon -r dotenv/config --experimental-specifier-resolution=node dist/index.js\"",
+    "start": "npm run build && node -r dotenv/config --experimental-specifier-resolution=node dist/index.js",
     "build": "tsc --build"
   },
   "repository": {
