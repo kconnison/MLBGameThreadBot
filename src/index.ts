@@ -38,9 +38,8 @@ async function initializeGameThreads() {
     logger.debug(`${gamePks.length} game(s) scheduled today!`, gamePks);
 
     gamePks.forEach(async gamePk => {
-        if( gamePk ) {
-            let gameInfo = (await MLBStatsAPI.GameService.liveGameV1(gamePk));
-            let gameThread = new GameThread(gameInfo);
+        if( gamePk ) {            
+            let gameThread = new GameThread(gamePk);
             gameThread.post();
         }                
     });

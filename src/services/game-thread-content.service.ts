@@ -1,21 +1,22 @@
 import { bold, EmbedBuilder } from "@discordjs/builders";
-import { GameRestObject } from "mlb-stats-typescript-api/output/src";
+import { GameInfoService } from "./game-info.service";
 import { LoggerService } from "./logger.service";
 
 export class GameThreadContentService {
     private logger: LoggerService;
-    constructor() {
+
+    constructor(private gameInfo: GameInfoService) {
         this.logger = new LoggerService(GameThreadContentService.name);
     }
 
-    public getThreadTitle(gameInfo: GameRestObject) {
+    public getThreadTitle() {
         let title = "";
         try {
-            let homeTeam = gameInfo.gameData?.teams?.home?.teamName;
-            let awayTeam = gameInfo.gameData?.teams?.away?.teamName;
+            let homeTeam = this.gameInfo.homeTeam.teamName;
+            let awayTeam = this.gameInfo.awayTeam.teamName;
             title += `${awayTeam} @ ${homeTeam}`
 
-            let gDateTime = gameInfo.gameData?.datetime?.dateTime;
+            let gDateTime = this.gameInfo.datetime.dateTime;
             let gameDate = new Date(gDateTime || "");
             if( isNaN(gameDate.getTime()) ) {
                 this.logger.warn("DateTime value from GameInfo is not a valid date:", gDateTime);
@@ -36,15 +37,15 @@ export class GameThreadContentService {
         return title;
     }
 
-    public getSummaryEmbedContent(gameInfo: GameRestObject) {
+    public getSummaryEmbedContent() {
         let embed = null;
         try {
             embed = new EmbedBuilder()
-                .setAuthor({ name: "Major League Baseball", iconURL: this.getSportIcon(1, 100) })
-                .setTitle(this.getSummaryTitle(gameInfo))
-                .setURL(this.getMLBGameDayLink(gameInfo.gamePk || 0))
-                .setThumbnail(this.getMatchupIcon(gameInfo, 100))
-                .setDescription(this.getSummaryDescription(gameInfo))
+                .setAuthor({ name: "Major League Baseball", iconURL: this.getSportIcon(1, 100), url: "https://www.mlb.com/" })
+                .setTitle(this.getSummaryTitle())
+                .setURL(this.getMLBGameDayLink())
+                .setThumbnail(this.getMatchupIcon(100))
+                .setDescription(this.getSummaryDescription())
 
         } catch(e) {
             this.logger.error(e);
@@ -52,27 +53,27 @@ export class GameThreadContentService {
         return embed;
     }
 
-    private getSummaryTitle(gameInfo: GameRestObject) {
-        let homeTeam = gameInfo.gameData?.teams?.home;
+    private getSummaryTitle() {
+        let homeTeam = this.gameInfo.homeTeam;
         let homeNameRecord = `${homeTeam?.name} (${homeTeam?.record?.wins}-${homeTeam?.record?.losses})`;
         
-        let awayTeam = gameInfo.gameData?.teams?.away;
+        let awayTeam = this.gameInfo.awayTeam;
         let awayNameRecord = `${awayTeam?.name} (${awayTeam?.record?.wins}-${awayTeam?.record?.losses})`;
 
         return `${awayNameRecord} @ ${homeNameRecord}`;
     }
 
-    private getSummaryDescription(gameInfo: GameRestObject) {
-        let gameStatusCode = gameInfo.gameData?.status?.statusCode;
-        let gameStatus = `${bold("Game Status:")} ${gameInfo.gameData?.status?.detailedState}`;
-        
-        // If game not in preview state, include score in description
-        if( gameStatusCode != "P" ) {
-            let homeScore = (gameInfo.liveData?.linescore?.teams?.home as any)?.runs;
-            let homeTeamName = gameInfo.gameData?.teams?.home?.teamName;
+    private getSummaryDescription() {
+        let gameAbstractState = this.gameInfo.gameStatus.abstractGameState;
+        let gameDetailedState = `${bold("Game Status:")} ${this.gameInfo.gameStatus.detailedState}`;    
 
-            let awayScore = (gameInfo.liveData?.linescore?.teams?.away as any)?.runs;
-            let awayTeamName = gameInfo.gameData?.teams?.away?.teamName;
+        // If game not in preview state, include score in description
+        if( gameAbstractState != "Preview" ) {
+            let homeScore = (this.gameInfo.linescore.teams?.home as any)?.runs;
+            let homeTeamName = this.gameInfo.homeTeam.teamName;
+
+            let awayScore = (this.gameInfo.linescore.teams?.away as any)?.runs;
+            let awayTeamName = this.gameInfo.awayTeam.teamName;
 
             let minScore, maxScore, teamName;
             if(homeScore == awayScore) {
@@ -91,15 +92,15 @@ export class GameThreadContentService {
                 teamName = awayTeamName;
             }
 
-            gameStatus += ` - ${bold("Score:")} ${maxScore}-${minScore} ${teamName}`
+            gameDetailedState += ` - ${bold("Score:")} ${maxScore}-${minScore} ${teamName}`
         }
 
-        return gameStatus;
+        return gameDetailedState;
     }
 
-    public getMatchupIcon(gameInfo: GameRestObject, size: number) {
-        let homeTeamId = gameInfo.gameData?.teams?.home?.id;
-        let awayTeamId = gameInfo.gameData?.teams?.away?.id;
+    public getMatchupIcon(size: number) {
+        let homeTeamId = this.gameInfo.homeTeam.id;
+        let awayTeamId = this.gameInfo.awayTeam.id;
 
         return `https://midfield.mlbstatic.com/v1/teams-matchup/${awayTeamId}-${homeTeamId}/ar_1:1/w_${size}`;
     }
@@ -120,7 +121,8 @@ export class GameThreadContentService {
         return `https://midfield.mlbstatic.com/v1/people/${id}/spots/${size}`;
     }
 
-    public getMLBGameDayLink(gamePk: number) {
+    public getMLBGameDayLink() {
+        let gamePk = this.gameInfo.gamePk;
         return `https://www.mlb.com/gameday/${gamePk}/`;
     }
 }
