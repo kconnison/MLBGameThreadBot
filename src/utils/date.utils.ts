@@ -10,6 +10,14 @@ export namespace date {
         }
 
         /**
+         * Format date in HH:mm AM/PM format
+         * @param date 
+         */
+        export function HHMM(date: Date) {
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).replace(/\s+(?=(AM|PM))/, "");
+        }
+
+        /**
          * Format date in YYYYMMDD_HHmmss format.
          * Used as `timecode` parameter in MLB API
          * @param date 

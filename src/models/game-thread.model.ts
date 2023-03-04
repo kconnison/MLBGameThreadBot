@@ -33,7 +33,7 @@ export class GameThread {
         let title = this.content.getThreadTitle();
         let summaryEmbed = this.content.getSummaryEmbedContent();
 
-        this.logger.debug(title, summaryEmbed);
+        this.logger.debug(title, JSON.stringify(summaryEmbed));
     }
 
     /**
