@@ -1,5 +1,6 @@
-import { bold, EmbedBuilder } from "@discordjs/builders";
+import { bold, codeBlock, EmbedBuilder } from "@discordjs/builders";
 import { APIEmbedField } from "discord.js";
+import { GameStatsTable, GameStatsTableColumn } from "../models/game-stats-table.model";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
 import { GameInfoService } from "./game-info.service";
@@ -55,6 +56,11 @@ export class GameThreadContentService {
                 .setDescription(this.getSummaryDescription())
 
             embed = this.addGameInfo(embed);
+
+            // If game in Preview state, add probable pitchers
+            if( true ) {//this.gameInfo.isGameStatusPreview() ) {
+                embed = this.addProbablePitchers(embed);
+            }
 
             embeds.push(embed);
 
@@ -189,15 +195,67 @@ export class GameThreadContentService {
             let firstPitch = date.format.HHMM(new Date(gameInfo.firstPitch));
 
             let duration = gameInfo.gameDurationMinutes;
-            let gameLength = `${Math.floor(duration / 60)}:${ (duration % 60).toString().padStart(2,"0") }`
+            let gameLength = (duration? `${Math.floor(duration / 60)}:${ (duration % 60).toString().padStart(2,"0") }` : "");
 
-            let gameInfoValue = `${bold("Attendance:")} ${attendance}\n`
+            let gameInfoValue = (attendance? `${bold("Attendance:")} ${attendance}\n` : "")
                 + `${bold("First Pitch:")} ${firstPitch}\n`
-                + `${bold("Length:")} ${gameLength}`
+                + (gameLength? `${bold("Length:")} ${gameLength}`: "")
             fields.push({ name: "Game Info", value: gameInfoValue });
         }
 
         fields.push({ name: '\u200B', value: '\u200B' });
         return embed.addFields(fields);
+    }
+
+    private addProbablePitchers(embed: EmbedBuilder) {
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let homePitcherId = this.gameInfo.getProbablePitchers().home?.id;
+        let homePitcher = this.gameInfo.getHomePlayerInfo(homePitcherId);
+
+        let homePitcherSeasonStats = homePitcher.boxscore.seasonStats.pitching
+        let homePitcherRecord = `${homePitcherSeasonStats.wins}-${homePitcherSeasonStats.losses}`;
+        let homePitcherERA = homePitcherSeasonStats.era;
+        let homePitcherIP = homePitcherSeasonStats.inningsPitched;
+
+
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+        let awayPitcherId = this.gameInfo.getProbablePitchers().away?.id;    
+        let awayPitcher = this.gameInfo.getAwayPlayerInfo(awayPitcherId);
+        
+        let awayPitcherSeasonStats = awayPitcher.boxscore.seasonStats.pitching
+        let awayPitcherRecord = `${awayPitcherSeasonStats.wins}-${awayPitcherSeasonStats.losses}`;
+        let awayPitcherERA = awayPitcherSeasonStats.era;
+        let awayPitcherIP = awayPitcherSeasonStats.inningsPitched;
+        
+        // Set width of Team Name column
+        const teamColWidthBuffer = 5;
+        let teamColWidth = homeTeamName.length + teamColWidthBuffer;
+        if( homeTeamName.length < awayTeamName.length ) {
+            teamColWidth = awayTeamName.length + teamColWidthBuffer;
+        }
+
+        // Set width of Pitcher Name column
+        const nameColWidthBuffer = 5;
+        let nameColWidth = homePitcher.details.fullName.length + nameColWidthBuffer;
+        if( homePitcher.details.fullName.length < awayPitcher.details.fullName.length ) {
+            nameColWidth = awayPitcher.details.fullName.length + nameColWidthBuffer;
+        }
+
+        let columns: GameStatsTableColumn[] = [
+            { label: "Team", width: teamColWidth },
+            { label: "Pitcher", width: nameColWidth },
+            { label: "Record", width: 8, align: "right" },
+            { label: "ERA", width: 6, align: "right" },
+            { label: "IP", width: 7, align: "right" }
+        ];
+        let table = new GameStatsTable()
+            .setColumns(columns)
+            .setRows([
+                [awayTeamName, awayPitcher.details.fullName, awayPitcherRecord, awayPitcherERA, awayPitcherIP],
+                [homeTeamName, homePitcher.details.fullName, homePitcherRecord, homePitcherERA, homePitcherIP]
+            ]);
+
+        embed.addFields({ name: "Probable Pitchers", value: codeBlock(table.toString()) })
+        return embed;
     }
 }
