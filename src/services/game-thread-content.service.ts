@@ -1,5 +1,6 @@
 import { bold, EmbedBuilder } from "@discordjs/builders";
 import { APIEmbedField } from "discord.js";
+import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
 import { GameInfoService } from "./game-info.service";
 import { LoggerService } from "./logger.service";
@@ -40,21 +41,27 @@ export class GameThreadContentService {
     }
 
     public getSummaryEmbedContent() {
-        let embed = null;
+        let embeds = [];
         try {
-            embed = new EmbedBuilder()
-                .setAuthor({ name: "Major League Baseball", iconURL: this.getSportIcon(1, 100), url: "https://www.mlb.com/" })
+            let gamePk = this.gameInfo.gamePk;
+            let homeTeamId = this.gameInfo.getHomeTeam().id || 0;
+            let awayTeamId = this.gameInfo.getAwayTeam().id || 0;
+
+            let embed = new EmbedBuilder()
+                .setAuthor({ name: "Major League Baseball", iconURL: content.icon.getSportIcon(1, 100), url: "https://www.mlb.com/" })
                 .setTitle(this.getSummaryTitle())
-                .setURL(this.getMLBGameDayLink())
-                .setThumbnail(this.getMatchupIcon(100))
+                .setURL(content.link.getMLBGameDayLink(gamePk))
+                .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
                 .setDescription(this.getSummaryDescription())
 
-            embed = this.addGameInfoFields(embed);
+            embed = this.addGameInfo(embed);
+
+            embeds.push(embed);
 
         } catch(e) {
             this.logger.error(e);
         }
-        return embed;
+        return embeds;
     }
 
     private getSummaryTitle() {
@@ -110,7 +117,7 @@ export class GameThreadContentService {
         return description;
     }
 
-    private addGameInfoFields(embed: EmbedBuilder) {
+    private addGameInfo(embed: EmbedBuilder) {
         let fields: APIEmbedField[] = [];
 
         // Add Venue Info
@@ -192,33 +199,5 @@ export class GameThreadContentService {
 
         fields.push({ name: '\u200B', value: '\u200B' });
         return embed.addFields(fields);
-    }
-
-    public getMatchupIcon(size: number) {
-        let homeTeamId = this.gameInfo.getHomeTeam().id;
-        let awayTeamId = this.gameInfo.getAwayTeam().id;
-
-        return `https://midfield.mlbstatic.com/v1/teams-matchup/${awayTeamId}-${homeTeamId}/ar_1:1/w_${size}`;
-    }
-
-    public getSportIcon(id: number, size: number) {
-        return `https://midfield.mlbstatic.com/v1/sport/${id}/spots/${size}`;
-    }
-
-    public getLeagueIcon(id: number, size: number) {
-        return `https://midfield.mlbstatic.com/v1/league/${id}/spots/${size}`;
-    }
-
-    public getTeamIcon(id: number, size: number) {
-        return `https://midfield.mlbstatic.com/v1/team/${id}/spots/${size}`;
-    }
-
-    public getPlayerIcon(id: number, size: number) {
-        return `https://midfield.mlbstatic.com/v1/people/${id}/spots/${size}`;
-    }
-
-    public getMLBGameDayLink() {
-        let gamePk = this.gameInfo.gamePk;
-        return `https://www.mlb.com/gameday/${gamePk}/`;
     }
 }

@@ -31,9 +31,9 @@ export class GameThread {
      */
     private createDiscordThread() {
         let title = this.content.getThreadTitle();
-        let summaryEmbed = this.content.getSummaryEmbedContent();
+        let summaryEmbeds = this.content.getSummaryEmbedContent();
 
-        this.logger.debug(title, JSON.stringify(summaryEmbed));
+        this.logger.debug(title, JSON.stringify(summaryEmbeds));
     }
 
     /**
