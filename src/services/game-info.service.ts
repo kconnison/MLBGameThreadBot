@@ -71,6 +71,10 @@ export class GameInfoService {
         return (this.gameInfo?.gameData?.gameInfo as any) || {};
     }
 
+    getProbablePitchers() {
+        return (this.gameInfo?.gameData?.probablePitchers as any) || {};
+    }
+
     getPlays() {
         return this.gameInfo?.liveData?.plays || {};
     }
@@ -81,6 +85,20 @@ export class GameInfoService {
 
     getBoxscore() {
         return this.gameInfo?.liveData?.boxscore || {};
+    }
+
+    getHomePlayerInfo(id: number) {
+        return this.getPlayerInfo("home", id);
+    }
+
+    getAwayPlayerInfo(id: number) {
+        return this.getPlayerInfo("away", id);
+    }
+
+    private getPlayerInfo(teamDesignation: "home" | "away", id: number) {
+        let details = (this.gameInfo?.gameData?.players as any)[`ID${id}`];
+        let boxscore = ((this.gameInfo?.liveData?.boxscore?.teams || {})[teamDesignation]?.players as any)[`ID${id}`];
+        return { details, boxscore };
     }
 
     getMedia() {
