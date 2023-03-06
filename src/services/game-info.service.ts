@@ -31,7 +31,7 @@ export class GameInfoService {
         let schedule, gameInfo, gameContent;
         [schedule, gameInfo, gameContent] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
 
-        this.scheduleObject = schedule?.dates?.at(0)?.games?.find(gm => { return gm.gamePk == this.gamePk; }) || {};
+        this.scheduleObject = schedule?.dates?.at(0)?.games?.at(0) || {};
         this.gameObject = gameInfo;
         this.gameContentObject = gameContent;
 
