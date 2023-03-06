@@ -19,4 +19,8 @@ export class PlayerInfo {
         this.boxscore = newBoxscore;
         return this;
     }
+
+    public getSeasonStats() {
+        return this.boxscore.seasonStats;
+    }
 }

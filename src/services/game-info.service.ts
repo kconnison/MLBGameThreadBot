@@ -8,6 +8,7 @@ export class GameInfoService {
 
     private scheduleObject: ScheduleRestGameObject | undefined;
     private gameObject: GameRestObject | undefined;
+    private gameContentObject: GameContentRestObject | undefined;
 
     private broadcastInfo: GameBroadcastInfo | undefined;
     private playerInfo: Map<number, PlayerInfo> = new Map();
@@ -23,14 +24,16 @@ export class GameInfoService {
     public async load(gamePk: number) {
         this.logger.debug(`Loading game info for gamePk: ${gamePk} ...`);
 
-        let pSchedule = MLBStatsAPI.ScheduleService.schedule(1, [gamePk], { hydrate: "broadcasts,game(content(highlights(highlights)))" });
+        let pSchedule = MLBStatsAPI.ScheduleService.schedule(1, [gamePk], { hydrate: "broadcasts" });
         let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk);
+        let pGameContent = MLBStatsAPI.GameService.content(gamePk);
 
-        let schedule, gameInfo;
-        [schedule, gameInfo] = await Promise.all([pSchedule, pGameInfo]);
+        let schedule, gameInfo, gameContent;
+        [schedule, gameInfo, gameContent] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
 
         this.scheduleObject = schedule?.dates?.at(0)?.games?.find(gm => { return gm.gamePk == this.gamePk; }) || {};
         this.gameObject = gameInfo;
+        this.gameContentObject = gameContent;
 
         this.parseBroadcasts((this.scheduleObject as any)?.broadcasts);
         this.parsePlayerInfo(gameInfo);
@@ -38,8 +41,16 @@ export class GameInfoService {
         return;
     }
 
-    public update() {
-        this.load(this.gamePk);
+    public async update() {
+        let gamePk = this.gamePk;
+
+        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk);
+        let pGameContent = MLBStatsAPI.GameService.content(gamePk);
+        [this.gameObject, this.gameContentObject] = await Promise.all([pGameInfo, pGameContent]);
+
+        this.updatePlayerBoxscores(this.gameObject);
+
+        return;
     }
 
     getDateTime() {
@@ -82,10 +93,6 @@ export class GameInfoService {
         return this.gameObject?.gameData?.teams?.away || {};
     }
 
-    getPlayers() {
-        return this.gameObject?.gameData?.players || {};
-    }
-
     getVenue() {
         return this.gameObject?.gameData?.venue || {};
     }
@@ -99,7 +106,14 @@ export class GameInfoService {
     }
 
     getProbablePitchers() {
-        return (this.gameObject?.gameData?.probablePitchers as any) || {};
+        let probablePitchers = (this.gameObject?.gameData?.probablePitchers as any) || {};
+        let homePitcherId = probablePitchers.home?.id;
+        let homePitcher = this.getPlayerInfo(homePitcherId);
+
+        let awayPitcherId = probablePitchers.away?.id;
+        let awayPitcher = this.getPlayerInfo(awayPitcherId);        
+
+        return { home: homePitcher, away: awayPitcher };
     }
 
     getPlays() {
@@ -114,18 +128,8 @@ export class GameInfoService {
         return this.gameObject?.liveData?.boxscore || {};
     }
 
-    getHomePlayerInfo(id: number) {
-        return this.getPlayerInfo("home", id);
-    }
-
-    getAwayPlayerInfo(id: number) {
-        return this.getPlayerInfo("away", id);
-    }
-
-    private getPlayerInfo(teamDesignation: "home" | "away", id: number) {
-        let details = (this.gameObject?.gameData?.players as any)[`ID${id}`];
-        let boxscore = ((this.gameObject?.liveData?.boxscore?.teams || {})[teamDesignation]?.players as any)[`ID${id}`];
-        return { details, boxscore };
+    public getPlayerInfo(id: number) {
+        return this.playerInfo.get(id);
     }
 
     public getBroadcasts(): GameBroadcastInfo {

@@ -140,53 +140,40 @@ export class GameThreadContentService {
         }
 
         // Add TV/Radio Info
-        let media: any[] = this.gameInfo.getMedia();
-        if( Object.keys(media).length > 0 ) {
-            let homeTeamName = this.gameInfo.getHomeTeam().teamName;
-            let awayTeamName = this.gameInfo.getAwayTeam().teamName;
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName;
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName;
+        let broadcasts = this.gameInfo.getBroadcasts();
 
-            let tvListings = "None";
-            let tvFeeds = ((media.find((med: any) => {
-                return med.title == "MLBTV";
-            }) || {})?.items || []);
-            if( tvFeeds.length > 0 ) {
-                tvListings = tvFeeds.map((feed: any) => {
-                    let feedDesc = "";
-                    let feedType = feed.mediaFeedType;
-                    if( feedType == "HOME" ) {
-                        feedDesc = bold(`${homeTeamName}:`);
-                    } else if( feedType == "AWAY" ) {
-                        feedDesc = bold(`${awayTeamName}:`);
-                    } else if( feedType == "NATIONAL" ) {
-                        feedDesc = bold("National:");
-                    }
-                    return `${feedDesc} ${feed.callLetters}`;        
-                }).join("\n");
-            }            
-
-            let radioListings = "None";            
-            let radioFeeds = ((media.find((med: any) => {
-                return med.title == "Audio";
-            }) || {})?.items || []);
-
-            if( radioFeeds.length > 0 ) {
-                radioListings = radioFeeds.map((feed: any) => {
-                    let feedDesc = "";
-                    let feedType = feed.type;
-                    if( feedType == "HOME" ) {
-                        feedDesc = bold(`${homeTeamName}:`);
-                    } else if( feedType == "AWAY" ) {
-                        feedDesc = bold(`${awayTeamName}:`);
-                    } else if( feedType == "NATIONAL" ) {
-                        feedDesc = bold("National:");
-                    }
-                    return `${feedDesc} ${feed.callLetters}`;        
-                }).join("\n");
-            }  
-
-            fields.push({ name: "TV", value: tvListings, inline: true });
-            fields.push({ name: "Radio", value: radioListings, inline: true });
+        let tvBroadcasts = broadcasts.tv;
+        let tvListings = [];
+        if( tvBroadcasts.national.length > 0 ) {
+            tvListings.push(`${bold("National:")} ${tvBroadcasts.national.join(", ")}`);
         }
+        if( tvBroadcasts.home.length > 0 ) {
+            tvListings.push(`${bold(`${homeTeamName}:`)} ${tvBroadcasts.home.join(", ")}`);
+        }
+        if( tvBroadcasts.away.length > 0 ) {
+            tvListings.push(`${bold(`${awayTeamName}:`)} ${tvBroadcasts.away.join(", ")}`);
+        }      
+        if( tvListings.length == 0 ) tvListings.push("None");
+
+
+        let radioBroadcasts = broadcasts.radio;
+        let radioListings = [];
+        if( radioBroadcasts.national.length > 0 ) {
+            radioListings.push(`${bold("National:")} ${radioBroadcasts.national.join(", ")}`);
+        }
+        if( radioBroadcasts.home.length > 0 ) {
+            radioListings.push(`${bold(`${homeTeamName}:`)} ${radioBroadcasts.home.join(", ")}`);
+        }
+        if( radioBroadcasts.away.length > 0 ) {
+            radioListings.push(`${bold(`${awayTeamName}:`)} ${radioBroadcasts.away.join(", ")}`);
+        }  
+        if( radioListings.length == 0 ) radioListings.push("None");
+        
+        fields.push({ name: "TV", value: tvListings.join("\n"), inline: true });
+        fields.push({ name: "Radio", value: radioListings.join("\n"), inline: true });        
+
 
         // Add Game Info (Attendance/First Pitch/Length) if available
         let gameInfo = this.gameInfo.getGameInfo();
@@ -208,21 +195,23 @@ export class GameThreadContentService {
     }
 
     private addProbablePitchers(embed: EmbedBuilder) {
-        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let homePitcherId = this.gameInfo.getProbablePitchers().home?.id;
-        let homePitcher = this.gameInfo.getHomePlayerInfo(homePitcherId);
+        let probablePitchers = this.gameInfo.getProbablePitchers();
 
-        let homePitcherSeasonStats = homePitcher.boxscore.seasonStats.pitching
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let homePitcher = probablePitchers.home;
+
+        let homePitcherName = homePitcher?.getProfile()?.fullName || "";
+        let homePitcherSeasonStats = homePitcher?.getSeasonStats()?.pitching || {};
         let homePitcherRecord = `${homePitcherSeasonStats.wins}-${homePitcherSeasonStats.losses}`;
         let homePitcherERA = homePitcherSeasonStats.era;
         let homePitcherIP = homePitcherSeasonStats.inningsPitched;
 
 
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-        let awayPitcherId = this.gameInfo.getProbablePitchers().away?.id;    
-        let awayPitcher = this.gameInfo.getAwayPlayerInfo(awayPitcherId);
+        let awayPitcher = probablePitchers.away;
         
-        let awayPitcherSeasonStats = awayPitcher.boxscore.seasonStats.pitching
+        let awayPitcherName = awayPitcher?.getProfile()?.fullName || "";
+        let awayPitcherSeasonStats = awayPitcher?.getSeasonStats()?.pitching || {};
         let awayPitcherRecord = `${awayPitcherSeasonStats.wins}-${awayPitcherSeasonStats.losses}`;
         let awayPitcherERA = awayPitcherSeasonStats.era;
         let awayPitcherIP = awayPitcherSeasonStats.inningsPitched;
@@ -236,9 +225,9 @@ export class GameThreadContentService {
 
         // Set width of Pitcher Name column
         const nameColWidthBuffer = 5;
-        let nameColWidth = homePitcher.details.fullName.length + nameColWidthBuffer;
-        if( homePitcher.details.fullName.length < awayPitcher.details.fullName.length ) {
-            nameColWidth = awayPitcher.details.fullName.length + nameColWidthBuffer;
+        let nameColWidth = homePitcherName.length + nameColWidthBuffer;
+        if( homePitcherName.length < awayPitcherName.length ) {
+            nameColWidth = awayPitcherName.length + nameColWidthBuffer;
         }
 
         let columns: GameStatsTableColumn[] = [
@@ -251,8 +240,8 @@ export class GameThreadContentService {
         let table = new GameStatsTable()
             .setColumns(columns)
             .setRows([
-                [awayTeamName, awayPitcher.details.fullName, awayPitcherRecord, awayPitcherERA, awayPitcherIP],
-                [homeTeamName, homePitcher.details.fullName, homePitcherRecord, homePitcherERA, homePitcherIP]
+                [awayTeamName, awayPitcherName, awayPitcherRecord, awayPitcherERA, awayPitcherIP],
+                [homeTeamName, homePitcherName, homePitcherRecord, homePitcherERA, homePitcherIP]
             ]);
 
         embed.addFields({ name: "Probable Pitchers", value: codeBlock(table.toString()) })
