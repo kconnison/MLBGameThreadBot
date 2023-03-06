@@ -55,13 +55,15 @@ export class GameThreadContentService {
                 .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
                 .setDescription(this.getSummaryDescription())
 
-            embed = this.addGameInfo(embed);
+            let fields: APIEmbedField[] = [];
+            this.addGameInfo(fields);
 
             // If game in Preview state, add probable pitchers
             if( true ) {//this.gameInfo.isGameStatusPreview() ) {
-                embed = this.addProbablePitchers(embed);
+                this.addProbablePitchers(fields);
             }
 
+            embed = embed.addFields(fields)
             embeds.push(embed);
 
         } catch(e) {
@@ -123,9 +125,7 @@ export class GameThreadContentService {
         return description;
     }
 
-    private addGameInfo(embed: EmbedBuilder) {
-        let fields: APIEmbedField[] = [];
-
+    private addGameInfo(fields: APIEmbedField[]) {
         // Add Venue Info
         fields.push({ name: "Venue", value: this.gameInfo.getVenue().name || "" });
 
@@ -140,40 +140,7 @@ export class GameThreadContentService {
         }
 
         // Add TV/Radio Info
-        let homeTeamName = this.gameInfo.getHomeTeam().teamName;
-        let awayTeamName = this.gameInfo.getAwayTeam().teamName;
-        let broadcasts = this.gameInfo.getBroadcasts();
-
-        let tvBroadcasts = broadcasts.tv;
-        let tvListings = [];
-        if( tvBroadcasts.national.length > 0 ) {
-            tvListings.push(`${bold("National:")} ${tvBroadcasts.national.join(", ")}`);
-        }
-        if( tvBroadcasts.home.length > 0 ) {
-            tvListings.push(`${bold(`${homeTeamName}:`)} ${tvBroadcasts.home.join(", ")}`);
-        }
-        if( tvBroadcasts.away.length > 0 ) {
-            tvListings.push(`${bold(`${awayTeamName}:`)} ${tvBroadcasts.away.join(", ")}`);
-        }      
-        if( tvListings.length == 0 ) tvListings.push("None");
-
-
-        let radioBroadcasts = broadcasts.radio;
-        let radioListings = [];
-        if( radioBroadcasts.national.length > 0 ) {
-            radioListings.push(`${bold("National:")} ${radioBroadcasts.national.join(", ")}`);
-        }
-        if( radioBroadcasts.home.length > 0 ) {
-            radioListings.push(`${bold(`${homeTeamName}:`)} ${radioBroadcasts.home.join(", ")}`);
-        }
-        if( radioBroadcasts.away.length > 0 ) {
-            radioListings.push(`${bold(`${awayTeamName}:`)} ${radioBroadcasts.away.join(", ")}`);
-        }  
-        if( radioListings.length == 0 ) radioListings.push("None");
-        
-        fields.push({ name: "TV", value: tvListings.join("\n"), inline: true });
-        fields.push({ name: "Radio", value: radioListings.join("\n"), inline: true });        
-
+        this.addBroadcastInfo(fields);
 
         // Add Game Info (Attendance/First Pitch/Length) if available
         let gameInfo = this.gameInfo.getGameInfo();
@@ -191,10 +158,46 @@ export class GameThreadContentService {
         }
 
         fields.push({ name: '\u200B', value: '\u200B' });
-        return embed.addFields(fields);
     }
 
-    private addProbablePitchers(embed: EmbedBuilder) {
+    private addBroadcastInfo(fields: APIEmbedField[]) {
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName;
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName;
+        let broadcasts = this.gameInfo.getBroadcasts();
+
+        // Get TV feeds
+        let tvBroadcasts = broadcasts.tv;
+        let tvFeeds = [];
+        if( tvBroadcasts.national.length > 0 ) {
+            tvFeeds.push(`${bold("National:")} ${tvBroadcasts.national.join(", ")}`);
+        }
+        if( tvBroadcasts.away.length > 0 ) {
+            tvFeeds.push(`${bold(`${awayTeamName}:`)} ${tvBroadcasts.away.join(", ")}`);
+        }  
+        if( tvBroadcasts.home.length > 0 ) {
+            tvFeeds.push(`${bold(`${homeTeamName}:`)} ${tvBroadcasts.home.join(", ")}`);
+        }    
+        if( tvFeeds.length == 0 ) tvFeeds.push("None");
+
+        // Get Radio feeds
+        let radioBroadcasts = broadcasts.radio;
+        let radioFeeds = [];
+        if( radioBroadcasts.national.length > 0 ) {
+            radioFeeds.push(`${bold("National:")} ${radioBroadcasts.national.join(", ")}`);
+        }
+        if( radioBroadcasts.away.length > 0 ) {
+            radioFeeds.push(`${bold(`${awayTeamName}:`)} ${radioBroadcasts.away.join(", ")}`);
+        }  
+        if( radioBroadcasts.home.length > 0 ) {
+            radioFeeds.push(`${bold(`${homeTeamName}:`)} ${radioBroadcasts.home.join(", ")}`);
+        }
+        if( radioFeeds.length == 0 ) radioFeeds.push("None");
+        
+        fields.push({ name: "TV", value: tvFeeds.join("\n"), inline: true });
+        fields.push({ name: "Radio", value: radioFeeds.join("\n"), inline: true }); 
+    }
+
+    private addProbablePitchers(fields: APIEmbedField[]) {
         let probablePitchers = this.gameInfo.getProbablePitchers();
 
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
@@ -244,7 +247,6 @@ export class GameThreadContentService {
                 [homeTeamName, homePitcherName, homePitcherRecord, homePitcherERA, homePitcherIP]
             ]);
 
-        embed.addFields({ name: "Probable Pitchers", value: codeBlock(table.toString()) })
-        return embed;
+        fields.push({ name: "Probable Pitchers", value: codeBlock(table.toString()) })
     }
 }
