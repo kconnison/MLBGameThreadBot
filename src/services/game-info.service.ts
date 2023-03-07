@@ -12,6 +12,7 @@ export class GameInfoService {
 
     private broadcastInfo: GameBroadcastInfo | undefined;
     private playerInfo: Map<number, PlayerInfo> = new Map();
+    private batterStats: { home: Map<number, any>, away: Map<number, any> } = { home: new Map(), away: new Map() };
 
     constructor() {
         this.logger = new LoggerService(GameInfoService.name);
@@ -25,7 +26,7 @@ export class GameInfoService {
         this.logger.debug(`Loading game info for gamePk: ${gamePk} ...`);
 
         let pSchedule = MLBStatsAPI.ScheduleService.schedule(1, [gamePk], { hydrate: "broadcasts" });
-        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk);
+        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk, { timecode: "20230306_050000" });
         let pGameContent = MLBStatsAPI.GameService.content(gamePk);
 
         let schedule, gameInfo, gameContent;
@@ -37,6 +38,7 @@ export class GameInfoService {
 
         this.parseBroadcasts((this.scheduleObject as any)?.broadcasts);
         this.parsePlayerInfo(gameInfo);
+        await this.parsePlayerStatsVsProbPitcher();
 
         return;
     }
@@ -47,6 +49,9 @@ export class GameInfoService {
         let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk);
         let pGameContent = MLBStatsAPI.GameService.content(gamePk);
         [this.gameObject, this.gameContentObject] = await Promise.all([pGameInfo, pGameContent]);
+
+        //call this again here in case lineups were not available on first load
+        await this.parsePlayerStatsVsProbPitcher();
 
         this.updatePlayerBoxscores(this.gameObject);
 
@@ -62,26 +67,26 @@ export class GameInfoService {
     }
 
     /**
-     * Determine if game status is "Preview"
+     * Determine if game state is "Preview"
      * @returns 
      */
-    isGameStatusPreview() {
+    isGameStatePreview() {
         return (this.getGameStatus().abstractGameState == "Preview");
     }
 
     /**
-     * Determine if game status is "Live"
+     * Determine if game state is "Live"
      * @returns 
      */
-    isGameStatusLive() {
+    isGameStateLive() {
         return (this.getGameStatus().abstractGameState == "Live");
     }
 
     /**
-     * Determine if game status is "Final"
+     * Determine if game state is "Final"
      * @returns 
      */
-    isGameStatusFinal() {
+    isGameStateFinal() {
         return (this.getGameStatus().abstractGameState == "Final");
     }
 
@@ -114,6 +119,13 @@ export class GameInfoService {
         let awayPitcher = this.getPlayerInfo(awayPitcherId);        
 
         return { home: homePitcher, away: awayPitcher };
+    }
+
+    public getBatterStatsVsProbPitcher(id: number) {
+        if( this.batterStats.home.has(id) ) {
+            return this.batterStats.home.get(id);
+        }
+        return this.batterStats.away.get(id);
     }
 
     getPlays() {
@@ -194,6 +206,58 @@ export class GameInfoService {
             this.playerInfo.get(playerId)?.setBoxscore(playerBoxscore);
         }
     }
+
+    private async parsePlayerStatsVsProbPitcher() {
+        let probablePitchers = this.getProbablePitchers();
+
+        let homeBox = this.getBoxscore().teams?.home;
+        let homeBattingOrder = homeBox?.battingOrder || [];
+
+        let awayBox = this.getBoxscore().teams?.away;
+        let awayBattingOrder = awayBox?.battingOrder || [];
+
+        // If we have a lineup and there is nothing in the map,
+        // then call the API and build the map
+        if( homeBattingOrder.length > 0 && this.batterStats.home.size == 0 ) {
+            this.logger.debug("Home batting order present AND no stats loaded; loading stats...");
+            let awayPitchId = probablePitchers.away?.getProfile().id || 0;
+            this.batterStats.home = await this.loadBatterStatsVsProbPitcher(homeBattingOrder, awayPitchId);
+        }
+        if( awayBattingOrder.length > 0 && this.batterStats.away.size == 0 ) {
+            this.logger.debug("Away batting order present AND no stats loaded; loading stats...");
+            let homePitchId = probablePitchers.home?.getProfile().id || 0;
+            this.batterStats.away = await this.loadBatterStatsVsProbPitcher(awayBattingOrder, homePitchId);
+        }
+    }
+
+    /**
+     * Fetch batter stats vs specific pitcher
+     * @param batterIds 
+     * @param pitcherId 
+     * @returns 
+     */
+    private async loadBatterStatsVsProbPitcher(batterIds: number[], pitcherId: number) {
+        // Using direct URL since MLBStatsAPI does not currently have a method for this
+        let personIds = batterIds.join(",");
+        let hydration = `stats(group=[hitting],type=[vsPlayer],opposingPlayerId=${pitcherId},sportId=1)`;
+        let url = `https://statsapi.mlb.com/api/v1/people/?personIds=${personIds}&hydrate=${hydration}`;
+
+        this.logger.debug("Fetching batter stats vs pitcher: ", url);
+
+        let stats = new Map<number, any>();
+        return fetch(url).then(response => response.json()).then((response) => {
+            (response?.people || []).forEach((p: any) => {
+                let vsPlayerTotal = (p?.stats || []).find((s: any) => { return s?.type?.displayName == "vsPlayerTotal"; });
+                let hittingStats = (vsPlayerTotal?.splits?.at(0)?.stat || {});
+                stats.set(p.id, hittingStats);
+            });
+            return stats;
+
+        }).catch((e) => {
+            this.logger.error(e);
+            return stats;
+        });
+    }    
 }
 
 interface GameBroadcastInfo {

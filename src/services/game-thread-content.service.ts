@@ -1,6 +1,7 @@
 import { bold, codeBlock, EmbedBuilder } from "@discordjs/builders";
 import { APIEmbedField } from "discord.js";
 import { GameStatsTable, GameStatsTableColumn } from "../models/game-stats-table.model";
+import { PlayerInfo } from "../models/player-info.model";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
 import { GameInfoService } from "./game-info.service";
@@ -58,9 +59,18 @@ export class GameThreadContentService {
             let fields: APIEmbedField[] = [];
             this.addGameInfo(fields);
 
-            // If game in Preview state, add probable pitchers
-            if( true ) {//this.gameInfo.isGameStatusPreview() ) {
+            this.logger.debug(`Game State: ${this.gameInfo.getGameStatus().abstractGameState}`)
+
+            // If game in Preview state, show probable pitchers 
+            // & starting lineup w/ stats against probable pitcher
+            if( this.gameInfo.isGameStatePreview() ) {                
                 this.addProbablePitchers(fields);
+                this.addStartingLineup(fields);
+
+            // Game is Live/Final, show in-game stats table
+            // & other in-game information
+            } else {
+                
             }
 
             embed = embed.addFields(fields)
@@ -86,11 +96,11 @@ export class GameThreadContentService {
         let description = `${bold("Game Status:")} ${this.gameInfo.getGameStatus().detailedState}`;    
 
         // If game not in preview state, include score in description
-        if( !this.gameInfo.isGameStatusPreview() ) {
+        if( !this.gameInfo.isGameStatePreview() ) {
             let linescore = this.gameInfo.getLinescore();
 
             // If game is live, include current inning
-            if( this.gameInfo.isGameStatusLive() ) {      
+            if( this.gameInfo.isGameStateLive() ) {      
                 let inningState = (linescore as any).inningState;
                 let inningOrdinal = (linescore as any).currentInningOrdinal;
                 description += ` (${inningState} ${inningOrdinal})`
@@ -247,6 +257,87 @@ export class GameThreadContentService {
                 [homeTeamName, homePitcherName, homePitcherRecord, homePitcherERA, homePitcherIP]
             ]);
 
-        fields.push({ name: "Probable Pitchers", value: codeBlock(table.toString()) })
+        fields.push({ name: "Probable Pitchers (Season Stats)", value: codeBlock(table.toString()) })
+    }
+
+    private addStartingLineup(fields: APIEmbedField[]) {
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let homeBox = this.gameInfo.getBoxscore().teams?.home;
+        let homeBattingOrder = homeBox?.battingOrder || [];
+        let homeLineupRows: any[][] = [];
+
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+        let awayBox = this.gameInfo.getBoxscore().teams?.away;
+        let awayBattingOrder = awayBox?.battingOrder || [];
+        let awayLineupRows: any[][] = [];
+
+        let probablePitchers = this.gameInfo.getProbablePitchers();
+
+        let playerNameColWidth = 0;
+        const nameColWidthBuffer = 5;
+
+        let columns: GameStatsTableColumn[] = [
+            { label: "", width: 0 },
+            { label: "AVG", width: 7, align: "right" },
+            { label: "OPS", width: 7, align: "right" },
+            { label: "AB", width: 4, align: "right" },
+            { label: "HR", width: 4, align: "right" },
+            { label: "RBI", width: 4, align: "right" },
+            { label: "K", width: 4, align: "right" }
+        ];        
+
+        if( awayBattingOrder.length > 0 ) {        
+            awayBattingOrder.forEach((id, i) => {
+                let playerInfo = this.gameInfo.getPlayerInfo(id);
+                let stats = this.gameInfo.getBatterStatsVsProbPitcher(id);
+
+                if( playerInfo ) {
+                    let row = this.buildStartingLineupRow(playerInfo, stats, i);
+                    if(row.at(0).length > playerNameColWidth) playerNameColWidth = row.at(0).length;
+
+                    awayLineupRows.push(row);
+                }                
+            });
+        }
+
+        if( homeBattingOrder.length > 0 ) {
+            homeBattingOrder.forEach((id, i) => {
+                let playerInfo = this.gameInfo.getPlayerInfo(id);
+                let stats = this.gameInfo.getBatterStatsVsProbPitcher(id);
+
+                if( playerInfo ) {
+                    let row = this.buildStartingLineupRow(playerInfo, stats, i);
+                    if(row.at(0).length > playerNameColWidth) playerNameColWidth = row.at(0).length;
+
+                    homeLineupRows.push(row);
+                }                
+            });
+        }              
+
+        // Update name column width
+        columns[0].width = (playerNameColWidth+nameColWidthBuffer);
+
+        let awayLineupTable = new GameStatsTable()
+            .setColumns(columns)
+            .setRows(awayLineupRows);
+        
+        let homeLineupTable = new GameStatsTable()
+            .setColumns(columns)
+            .setRows(homeLineupRows);
+
+        fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || ""}`, value: codeBlock(awayLineupTable.toString()) });
+        fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: codeBlock(homeLineupTable.toString()) });
+    }
+
+    private buildStartingLineupRow(playerInfo: PlayerInfo, stats: any, i: number) {
+        let playerName = `${i+1} ${playerInfo?.getProfile().boxscoreName} - ${playerInfo?.getBoxscore().position?.abbreviation}`;
+        let avg = stats?.avg || "-";
+        let ops = stats?.ops || "-";
+        let ab = stats?.atBats != undefined? stats.atBats : "-";
+        let hr = stats?.homeRuns != undefined? stats.homeRuns : "-";
+        let rbi = stats?.rbi != undefined? stats.rbi : "-";
+        let k = stats?.strikeOuts != undefined? stats.strikeOuts : "-";
+
+        return [playerName, avg, ops, ab, hr, rbi, k];
     }
 }
