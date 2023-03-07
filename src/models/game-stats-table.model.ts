@@ -44,9 +44,9 @@ export class GameStatsTable {
             return row.map((value, i) => {
                 let col = this.columns.at(i);
                 if( col?.align == "right" ) {
-                    return ""+value.padStart(col.width, " ");
+                    return (""+value).padStart(col.width, " ");
                 }
-                return ""+value.padEnd(col?.width, " ");
+                return (""+value).padEnd((col?.width || 0), " ");
 
             }).join("");
 
