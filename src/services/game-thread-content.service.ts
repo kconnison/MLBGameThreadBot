@@ -70,7 +70,7 @@ export class GameThreadContentService {
             // Game is Live/Final, show in-game stats table
             // & other in-game information
             } else {
-
+                this.addLiveBattingStats(fields);
             }
 
             embed = embed.addFields(fields)
@@ -286,32 +286,33 @@ export class GameThreadContentService {
             { label: "K", width: 4, align: "right" }
         ];        
 
+        const buildStartingLineupRow = (id: number, i: number) => {
+            let playerInfo = this.gameInfo.getPlayerInfo(id);
+            let stats = this.gameInfo.getBatterStatsVsProbPitcher(id);
+
+            let playerName = `${i+1} ${playerInfo?.getProfile().boxscoreName} - ${playerInfo?.getBoxscore().position?.abbreviation}`;
+            let avg = stats?.avg || "-";
+            let ops = stats?.ops || "-";
+            let ab = stats?.atBats != undefined? stats.atBats : "-";
+            let hr = stats?.homeRuns != undefined? stats.homeRuns : "-";
+            let rbi = stats?.rbi != undefined? stats.rbi : "-";
+            let k = stats?.strikeOuts != undefined? stats.strikeOuts : "-";
+    
+            return [playerName, avg, ops, ab, hr, rbi, k];
+        };
+
+        const mapStartingLineupRows = (id: number, i: number) => {
+            let row = buildStartingLineupRow(id, i);
+            if(row.at(0).length > playerNameColWidth) playerNameColWidth = row.at(0).length;
+            return row;
+        };
+
         if( awayBattingOrder.length > 0 ) {        
-            awayBattingOrder.forEach((id, i) => {
-                let playerInfo = this.gameInfo.getPlayerInfo(id);
-                let stats = this.gameInfo.getBatterStatsVsProbPitcher(id);
-
-                if( playerInfo ) {
-                    let row = this.buildStartingLineupRow(playerInfo, stats, i);
-                    if(row.at(0).length > playerNameColWidth) playerNameColWidth = row.at(0).length;
-
-                    awayLineupRows.push(row);
-                }                
-            });
+            awayLineupRows = awayBattingOrder.map(mapStartingLineupRows);
         }
 
         if( homeBattingOrder.length > 0 ) {
-            homeBattingOrder.forEach((id, i) => {
-                let playerInfo = this.gameInfo.getPlayerInfo(id);
-                let stats = this.gameInfo.getBatterStatsVsProbPitcher(id);
-
-                if( playerInfo ) {
-                    let row = this.buildStartingLineupRow(playerInfo, stats, i);
-                    if(row.at(0).length > playerNameColWidth) playerNameColWidth = row.at(0).length;
-
-                    homeLineupRows.push(row);
-                }                
-            });
+            homeLineupRows = homeBattingOrder.map(mapStartingLineupRows);
         }              
 
         // Update name column width
@@ -329,15 +330,83 @@ export class GameThreadContentService {
         fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: codeBlock(homeLineupTable.toString()) });
     }
 
-    private buildStartingLineupRow(playerInfo: PlayerInfo, stats: any, i: number) {
-        let playerName = `${i+1} ${playerInfo?.getProfile().boxscoreName} - ${playerInfo?.getBoxscore().position?.abbreviation}`;
-        let avg = stats?.avg || "-";
-        let ops = stats?.ops || "-";
-        let ab = stats?.atBats != undefined? stats.atBats : "-";
-        let hr = stats?.homeRuns != undefined? stats.homeRuns : "-";
-        let rbi = stats?.rbi != undefined? stats.rbi : "-";
-        let k = stats?.strikeOuts != undefined? stats.strikeOuts : "-";
+    private addLiveBattingStats(fields: APIEmbedField[]) {
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let homeBox = this.gameInfo.getBoxscore().teams?.home;
+        let homeBatters = homeBox?.batters || [];
 
-        return [playerName, avg, ops, ab, hr, rbi, k];
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+        let awayBox = this.gameInfo.getBoxscore().teams?.away;
+        let awayBatters = awayBox?.batters || [];
+
+        let playerNameColWidth = 0;
+        const nameColWidthBuffer = 5;
+
+        let columns: GameStatsTableColumn[] = [
+            { label: "", width: 3 }, // Lineup Number
+            { label: "", width: 0 }, // Player Name
+            { label: "AB", width: 3, align: "right" },
+            { label: "R", width: 3, align: "right" },
+            { label: "H", width: 3, align: "right" },
+            { label: "RBI", width: 5, align: "right" },
+            { label: "BB", width: 4, align: "right" },
+            { label: "K", width: 3, align: "right" },
+            { label: "LOB", width: 5, align: "right" },
+            //{ label: "AVG", width: 6, align: "right" },
+            //{ label: "OBP", width: 6, align: "right" },
+            //{ label: "SLG", width: 6, align: "right" }
+        ]; 
+
+        const buildStatsRow = (id: number) => {
+            let playerInfo = this.gameInfo.getPlayerInfo(id);
+            let profile = playerInfo?.getProfile();
+            let box = playerInfo?.getBoxscore();
+            let stats = (playerInfo?.getGameStats()?.batting as any);
+            let seasonStats = playerInfo?.getSeasonStats()?.batting;
+
+            // Confirm stats exist before building row
+            if( Object.keys(stats).length > 0 ) {
+                let battingOrder = parseInt((box as any).battingOrder || "0");
+                let lineupNbr = (battingOrder % 100 == 0)? (battingOrder / 100).toString() : "";
+    
+                let positions = (box as any).allPositions.map((pos: any) => { return pos.abbreviation; });
+                let namePos = `${stats.note || ""}${profile?.boxscoreName} - ${positions.join("-")}`;
+    
+                let ab = stats.atBats;
+                let runs = stats.runs;
+                let hits = stats.hits;
+                let rbi = stats.rbi;
+                let bb = stats.baseOnBalls;
+                let k = stats.strikeOuts;
+                let lob = stats.leftOnBase;
+                                
+                let avg = seasonStats?.avg;
+                let obp = seasonStats?.obp;
+                let slg = seasonStats?.slg;
+    
+                return [lineupNbr, namePos, ab, runs, hits, rbi, bb, k, lob]; //, avg, obp, slg];
+            }
+            return [];
+        };
+
+        const mapStatsRows = (id: number) => {
+            let statRow = buildStatsRow(id);
+            if(statRow.length > 0 && statRow.at(1).length > playerNameColWidth) playerNameColWidth = statRow.at(1).length;
+            return statRow;  
+        };       
+        
+        const isNotEmpty = (row: any[]) => { return row.length > 0; };
+
+        let awayStatRows = awayBatters.map(mapStatsRows).filter(isNotEmpty);
+        let homeStatRows = homeBatters.map(mapStatsRows).filter(isNotEmpty);
+
+        // Update name column width
+        columns[1].width = (playerNameColWidth+nameColWidthBuffer);
+
+        let awayStatTable = new GameStatsTable().setColumns(columns).setRows(awayStatRows);
+        let homeStatTable = new GameStatsTable().setColumns(columns).setRows(homeStatRows);
+
+        fields.push({ name: `${awayTeamName} Batters`, value: codeBlock(awayStatTable.toString()) });
+        fields.push({ name: `${homeTeamName} Batters`, value: codeBlock(homeStatTable.toString()) });
     }
 }
