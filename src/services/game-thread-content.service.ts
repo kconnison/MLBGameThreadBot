@@ -32,7 +32,7 @@ export class GameThreadContentService {
                 let day = gameDate.getDate().toString().padStart(2,"0");
                 let year = gameDate.getFullYear();
 
-                let time = date.format.HHMM(gameDate);
+                let time = date.format.toHHMM(gameDate);
                 title += ` - ${wkday} ${day} ${month} ${year} @ ${time}`
             }
 
@@ -70,7 +70,7 @@ export class GameThreadContentService {
             // Game is Live/Final, show in-game stats table
             // & other in-game information
             } else {
-                
+
             }
 
             embed = embed.addFields(fields)
@@ -156,7 +156,7 @@ export class GameThreadContentService {
         let gameInfo = this.gameInfo.getGameInfo();
         if( Object.keys(gameInfo).length > 0 ) {
             let attendance = gameInfo.attendance;
-            let firstPitch = date.format.HHMM(new Date(gameInfo.firstPitch));
+            let firstPitch = date.format.toHHMM(new Date(gameInfo.firstPitch));
 
             let duration = gameInfo.gameDurationMinutes;
             let gameLength = (duration? `${Math.floor(duration / 60)}:${ (duration % 60).toString().padStart(2,"0") }` : "");

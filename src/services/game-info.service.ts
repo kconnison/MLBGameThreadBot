@@ -22,11 +22,11 @@ export class GameInfoService {
         return this.gameObject?.gamePk || 0;
     }
 
-    public async load(gamePk: number) {
+    public async load(gamePk: number, timecode?: string) {
         this.logger.debug(`Loading game info for gamePk: ${gamePk} ...`);
 
         let pSchedule = MLBStatsAPI.ScheduleService.schedule(1, [gamePk], { hydrate: "broadcasts" });
-        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk, { timecode: "20230306_050000" });
+        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk, (timecode? { timecode } : {}));
         let pGameContent = MLBStatsAPI.GameService.content(gamePk);
 
         let schedule, gameInfo, gameContent;
@@ -43,10 +43,10 @@ export class GameInfoService {
         return;
     }
 
-    public async update() {
+    public async update(timecode?: string) {
         let gamePk = this.gamePk;
 
-        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk);
+        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk, (timecode? { timecode } : {}));
         let pGameContent = MLBStatsAPI.GameService.content(gamePk);
         [this.gameObject, this.gameContentObject] = await Promise.all([pGameInfo, pGameContent]);
 
