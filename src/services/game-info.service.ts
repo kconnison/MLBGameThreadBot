@@ -260,12 +260,12 @@ export class GameInfoService {
     }    
 }
 
-interface GameBroadcastInfo {
+export interface GameBroadcastInfo {
     tv: GameBroadcastFeeds;
     radio: GameBroadcastFeeds;
 }
 
-interface GameBroadcastFeeds {
+export interface GameBroadcastFeeds {
     home: BroadcastRestObject[];
     away: BroadcastRestObject[];
     national: BroadcastRestObject[];

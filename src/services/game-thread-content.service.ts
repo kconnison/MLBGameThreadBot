@@ -2,17 +2,21 @@ import { bold, codeBlock, EmbedBuilder } from "@discordjs/builders";
 import { APIEmbedField } from "discord.js";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
-import { GameInfoService } from "./game-info.service";
+import { GameBroadcastFeeds, GameInfoService } from "./game-info.service";
 import { LoggerService } from "./logger.service";
+import { StatsSummaryBuilder } from "./stats-summary-builder.service";
 import { StatsTableBuilder } from "./stats-table-builder.service";
 
 export class GameThreadContentService {
     private logger: LoggerService;
-    private statsTableBuilder: StatsTableBuilder;
+    private statsTable: StatsTableBuilder;
+    private statsSummary: StatsSummaryBuilder;
 
     constructor(private gameInfo: GameInfoService) {
         this.logger = new LoggerService(GameThreadContentService.name);
-        this.statsTableBuilder = new StatsTableBuilder(gameInfo);
+
+        this.statsTable = new StatsTableBuilder(gameInfo);
+        this.statsSummary = new StatsSummaryBuilder(gameInfo);
     }
 
     public getThreadTitle() {
@@ -65,7 +69,7 @@ export class GameThreadContentService {
             // If game in Preview state, show probable pitchers 
             // & starting lineup w/ stats against probable pitcher
             if( this.gameInfo.isGameStatePreview() ) {                
-                this.addProbablePitchersTable(fields);
+                this.addProbablePitchers(fields);
                 this.addStartingLineupTable(fields);
 
             // Game is Live/Final, show in-game stats table
@@ -176,36 +180,29 @@ export class GameThreadContentService {
         let awayTeamName = this.gameInfo.getAwayTeam().teamName;
         let broadcasts = this.gameInfo.getBroadcasts();
 
-        // Get TV feeds
-        let tvBroadcasts = broadcasts.tv;
-        let tvFeeds = [];
-        if( tvBroadcasts.national.length > 0 ) {
-            tvFeeds.push(`${bold("National:")} ${tvBroadcasts.national.join(", ")}`);
-        }
-        if( tvBroadcasts.away.length > 0 ) {
-            tvFeeds.push(`${bold(`${awayTeamName}:`)} ${tvBroadcasts.away.join(", ")}`);
-        }  
-        if( tvBroadcasts.home.length > 0 ) {
-            tvFeeds.push(`${bold(`${homeTeamName}:`)} ${tvBroadcasts.home.join(", ")}`);
-        }    
-        if( tvFeeds.length == 0 ) tvFeeds.push("None");
+        const formatBroadcastFeeds = (broadcastFeeds: GameBroadcastFeeds) => {
+            let feeds = [];
+            if( broadcastFeeds.national.length > 0 ) {
+                feeds.push(`${bold("National:")} ${broadcastFeeds.national.join(", ")}`);
+            }
+            if( broadcastFeeds.away.length > 0 ) {
+                feeds.push(`${bold(`${awayTeamName}:`)} ${broadcastFeeds.away.join(", ")}`);
+            }  
+            if( broadcastFeeds.home.length > 0 ) {
+                feeds.push(`${bold(`${homeTeamName}:`)} ${broadcastFeeds.home.join(", ")}`);
+            }    
+            if( feeds.length == 0 ) feeds.push("None");
 
-        // Get Radio feeds
-        let radioBroadcasts = broadcasts.radio;
-        let radioFeeds = [];
-        if( radioBroadcasts.national.length > 0 ) {
-            radioFeeds.push(`${bold("National:")} ${radioBroadcasts.national.join(", ")}`);
-        }
-        if( radioBroadcasts.away.length > 0 ) {
-            radioFeeds.push(`${bold(`${awayTeamName}:`)} ${radioBroadcasts.away.join(", ")}`);
-        }  
-        if( radioBroadcasts.home.length > 0 ) {
-            radioFeeds.push(`${bold(`${homeTeamName}:`)} ${radioBroadcasts.home.join(", ")}`);
-        }
-        if( radioFeeds.length == 0 ) radioFeeds.push("None");
+            return feeds.join("\n");
+        };
         
-        fields.push({ name: "TV", value: tvFeeds.join("\n"), inline: true });
-        fields.push({ name: "Radio", value: radioFeeds.join("\n"), inline: true }); 
+        fields.push({ name: "TV", value: formatBroadcastFeeds(broadcasts.tv), inline: true });
+        fields.push({ name: "Radio", value: formatBroadcastFeeds(broadcasts.radio), inline: true }); 
+    }
+
+    private addProbablePitchers(fields: APIEmbedField[]) {
+        let probablePitchersSummary = this.statsSummary.buildProbablePitchersSummary();
+        fields.push({ name: "Probable Pitchers (Season Stats)", value: probablePitchersSummary });
     }
 
     /**
@@ -216,7 +213,7 @@ export class GameThreadContentService {
      * @param fields 
      */
     private addProbablePitchersTable(fields: APIEmbedField[]) {
-        let table = this.statsTableBuilder.buildProbablePitchersTable();
+        let table = this.statsTable.buildProbablePitchersTable();
         fields.push({ name: "Probable Pitchers (Season Stats)", value: codeBlock(table.toString()) })
     }
 
@@ -233,7 +230,7 @@ export class GameThreadContentService {
 
         let probablePitchers = this.gameInfo.getProbablePitchers();
 
-        let tables = this.statsTableBuilder.buildStartingLineupTables();
+        let tables = this.statsTable.buildStartingLineupTables();
 
         fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || ""}`, value: codeBlock(tables.away.toString()) });
         fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: codeBlock(tables.home.toString()) });
@@ -250,7 +247,7 @@ export class GameThreadContentService {
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
 
-        let tables = this.statsTableBuilder.buildLiveBattingStatsTables();
+        let tables = this.statsTable.buildLiveBattingStatsTables();
 
         fields.push({ name: `${awayTeamName} Batters`, value: codeBlock(tables.away.toString()) });
         fields.push({ name: `${homeTeamName} Batters`, value: codeBlock(tables.home.toString()) });
