@@ -20,6 +20,10 @@ export class PlayerInfo {
         return this;
     }
 
+    public getGameStats() {
+        return this.boxscore.stats;
+    }
+
     public getSeasonStats() {
         return this.boxscore.seasonStats;
     }
