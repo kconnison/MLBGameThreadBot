@@ -1,8 +1,33 @@
+import { bold } from "@discordjs/builders";
 import { GameStatsTableColumn, GameStatsTable } from "../models/game-stats-table.model";
+import { PlayerInfo } from "../models/player-info.model";
 import { GameInfoService } from "./game-info.service";
 
-export class StatsTableBuilder {
+export class GameThreadStatsService {
     constructor(private gameInfo: GameInfoService) { }
+
+    public buildProbablePitchersSummary() {
+        let probablePitchers = this.gameInfo.getProbablePitchers();
+
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let hPitcher = probablePitchers.home;
+
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+        let aPitcher = probablePitchers.away;
+
+        const buildPitcherDescription = (teamName: string, pitcher: PlayerInfo | undefined) => {
+            if( pitcher ) {
+                let pName = pitcher?.getProfile()?.fullName || "";
+                let pSummary = pitcher?.getSeasonPitchingSummary();
+                
+                return `${bold(teamName)} - ${pName} (${pSummary})`;
+            }       
+            return `${bold(teamName)} - TBD`;
+        };
+
+        let pitchers = [buildPitcherDescription(awayTeamName, aPitcher), buildPitcherDescription(homeTeamName, hPitcher)];
+        return pitchers.join("\n");
+    }
 
     public buildProbablePitchersTable() {
         let probablePitchers = this.gameInfo.getProbablePitchers();
@@ -55,6 +80,10 @@ export class StatsTableBuilder {
             ]);
 
         return table;
+    }
+
+    public buildStartingLineupSummary() {
+        return { home: "", away: "" };
     }
 
     public buildStartingLineupTables() {
@@ -120,6 +149,10 @@ export class StatsTableBuilder {
             .setRows(homeLineupRows);
 
         return { home: homeLineupTable, away: awayLineupTable };
+    }
+
+    public buildLiveBattingStatsSummary() {
+        return { home: "", away: "" };
     }
 
     public buildLiveBattingStatsTables() {

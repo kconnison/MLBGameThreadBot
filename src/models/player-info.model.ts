@@ -24,7 +24,28 @@ export class PlayerInfo {
         return this.boxscore.stats;
     }
 
+    public getGameBattingSummary() {
+        return "";
+    }
+
+    public getGamePitchingSummary() {
+        return "";
+    }
+
     public getSeasonStats() {
         return this.boxscore.seasonStats;
+    }
+
+    public getSeasonBattingSummary() {
+        return "";
+    }
+
+    public getSeasonPitchingSummary() {
+        let seasonStats = this.getSeasonStats()?.pitching || {};
+        let record = `${seasonStats.wins}-${seasonStats.losses}`;
+        let era = seasonStats.era;
+        let ip = seasonStats.inningsPitched;  
+
+        return `${record}, ${era} ERA, ${ip} IP`;
     }
 }

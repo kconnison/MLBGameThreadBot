@@ -3,20 +3,17 @@ import { APIEmbedField } from "discord.js";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
 import { GameBroadcastFeeds, GameInfoService } from "./game-info.service";
+import { GameThreadStatsService } from "./game-thread-stats.service";
 import { LoggerService } from "./logger.service";
-import { StatsSummaryBuilder } from "./stats-summary-builder.service";
-import { StatsTableBuilder } from "./stats-table-builder.service";
 
 export class GameThreadContentService {
     private logger: LoggerService;
-    private statsTable: StatsTableBuilder;
-    private statsSummary: StatsSummaryBuilder;
+    private stats: GameThreadStatsService;
 
     constructor(private gameInfo: GameInfoService) {
         this.logger = new LoggerService(GameThreadContentService.name);
 
-        this.statsTable = new StatsTableBuilder(gameInfo);
-        this.statsSummary = new StatsSummaryBuilder(gameInfo);
+        this.stats = new GameThreadStatsService(gameInfo);
     }
 
     public getThreadTitle() {
@@ -201,7 +198,7 @@ export class GameThreadContentService {
     }
 
     private addProbablePitchers(fields: APIEmbedField[]) {
-        let probablePitchersSummary = this.statsSummary.buildProbablePitchersSummary();
+        let probablePitchersSummary = this.stats.buildProbablePitchersSummary();
         fields.push({ name: "Probable Pitchers (Season Stats)", value: probablePitchersSummary });
     }
 
@@ -213,8 +210,20 @@ export class GameThreadContentService {
      * @param fields 
      */
     private addProbablePitchersTable(fields: APIEmbedField[]) {
-        let table = this.statsTable.buildProbablePitchersTable();
+        let table = this.stats.buildProbablePitchersTable();
         fields.push({ name: "Probable Pitchers (Season Stats)", value: codeBlock(table.toString()) })
+    }
+
+    private addStartingLineup(fields: APIEmbedField[]) {
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+
+        let probablePitchers = this.gameInfo.getProbablePitchers();
+
+        let lineups = this.stats.buildStartingLineupSummary();
+
+        fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || ""}`, value: codeBlock(lineups.away) });
+        fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: codeBlock(lineups.home) });        
     }
 
     /**
@@ -230,10 +239,20 @@ export class GameThreadContentService {
 
         let probablePitchers = this.gameInfo.getProbablePitchers();
 
-        let tables = this.statsTable.buildStartingLineupTables();
+        let tables = this.stats.buildStartingLineupTables();
 
         fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || ""}`, value: codeBlock(tables.away.toString()) });
         fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: codeBlock(tables.home.toString()) });
+    }
+
+    private addLiveBattingStats(fields: APIEmbedField[]) {
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+
+        let tables = this.stats.buildLiveBattingStatsSummary();
+
+        fields.push({ name: `${awayTeamName} Batters`, value: codeBlock(tables.away) });
+        fields.push({ name: `${homeTeamName} Batters`, value: codeBlock(tables.home) });        
     }
 
     /**
@@ -247,7 +266,7 @@ export class GameThreadContentService {
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
 
-        let tables = this.statsTable.buildLiveBattingStatsTables();
+        let tables = this.stats.buildLiveBattingStatsTables();
 
         fields.push({ name: `${awayTeamName} Batters`, value: codeBlock(tables.away.toString()) });
         fields.push({ name: `${homeTeamName} Batters`, value: codeBlock(tables.home.toString()) });
