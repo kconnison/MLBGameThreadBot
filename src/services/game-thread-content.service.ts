@@ -251,7 +251,9 @@ export class GameThreadContentService {
     }
 
     private addScoreboard(fields: APIEmbedField[]) {
+        let table = this.stats.buildScoreboardTable();
 
+        fields.push({ name: "\u200B", value: codeBlock(table.toString()) });
     }
 
     private addLiveBattingStats(fields: APIEmbedField[]) {

@@ -7,6 +7,39 @@ import { GameInfoService } from "./game-info.service";
 export class GameThreadStatsService {
     constructor(private gameInfo: GameInfoService) { }
 
+    public buildScoreboardTable() {
+        let linescore = this.gameInfo.getLinescore();
+
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let homeScore = (linescore.teams?.home || {} as any);
+
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+        let awayScore = (linescore.teams?.away || {} as any);
+
+        // Set width of Team Name column
+        const teamColWidthBuffer = 5;
+        let teamColWidth = homeTeamName.length + teamColWidthBuffer;
+        if( homeTeamName.length < awayTeamName.length ) {
+            teamColWidth = awayTeamName.length + teamColWidthBuffer;
+        }
+
+        let columns: GameStatsTableColumn[] = [
+            { label: "Team", width: teamColWidth },
+            { label: "R", width: 5, align: "right" },
+            { label: "H", width: 5, align: "right" },
+            { label: "E", width: 5, align: "right" },
+            { label: "LOB", width: 5, align: "right" }
+        ];
+        let table = new GameStatsTable()
+            .setColumns(columns)
+            .setRows([
+                [awayTeamName, awayScore.runs, awayScore.hits, awayScore.errors, awayScore.leftOnBase],
+                [homeTeamName, homeScore.runs, homeScore.hits, homeScore.errors, homeScore.leftOnBase]
+            ]);
+
+        return table;
+    }
+
     public buildProbablePitchersSummary() {
         let probablePitchers = this.gameInfo.getProbablePitchers();
 
