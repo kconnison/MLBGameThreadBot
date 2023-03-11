@@ -25,11 +25,11 @@ export class PlayerInfo {
     }
 
     public getGameBattingSummary() {
-        return "";
+        return (this.getGameStats()?.batting as any)?.summary || "";
     }
 
     public getGamePitchingSummary() {
-        return "";
+        return (this.getGameStats()?.pitching as any)?.summary || "";
     }
 
     public getSeasonStats() {
@@ -37,7 +37,16 @@ export class PlayerInfo {
     }
 
     public getSeasonBattingSummary() {
-        return "";
+        let seasonStats = this.getSeasonStats()?.batting || {};        
+        let avg = seasonStats.avg;
+        let obp = seasonStats.obp;
+        let slg = seasonStats.slg;
+
+        let hr = seasonStats.homeRuns;
+        let rbi = seasonStats.rbi;
+        let k = seasonStats.strikeOuts;
+
+        return `${avg}/${obp}/${slg} | ${hr} HR, ${rbi} RBI, ${k} K`;
     }
 
     public getSeasonPitchingSummary() {
