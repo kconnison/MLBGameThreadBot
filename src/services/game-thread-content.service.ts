@@ -44,7 +44,7 @@ export class GameThreadContentService {
         return title;
     }
 
-    public getSummaryEmbedContent() {
+    public getSummaryEmbeds() {
         let embeds = [];
         try {
             let gamePk = this.gameInfo.gamePk;
@@ -53,10 +53,10 @@ export class GameThreadContentService {
 
             let embed = new EmbedBuilder()
                 .setAuthor({ name: "Major League Baseball", iconURL: content.icon.getSportIcon(1, 100), url: "https://www.mlb.com/" })
-                .setTitle(this.getSummaryTitle())
+                .setTitle(this.getSummaryEmbedTitle())
                 .setURL(content.link.getMLBGameDayLink(gamePk))
                 .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
-                .setDescription(this.getSummaryDescription())
+                .setDescription(this.getSummaryEmbedDescription())
 
             let fields: APIEmbedField[] = [];
             this.addGameInfo(fields);
@@ -72,8 +72,12 @@ export class GameThreadContentService {
             // Game is Live/Final, show in-game stats table
             // & other in-game information
             } else {
+                this.addScoreboard(fields);
                 this.addLiveBattingStats(fields);
                 this.addLivePitchingStats(fields);
+                this.addGameBoxscoreInfo(fields);
+                this.addScoringPlays(fields);
+                this.addHighlights(fields);
             }
 
             embed = embed.addFields(fields)
@@ -85,7 +89,7 @@ export class GameThreadContentService {
         return embeds;
     }
 
-    private getSummaryTitle() {
+    private getSummaryEmbedTitle() {
         let homeTeam = this.gameInfo.getHomeTeam();
         let homeNameRecord = `${homeTeam?.name} (${homeTeam?.record?.wins}-${homeTeam?.record?.losses})`;
         
@@ -95,7 +99,7 @@ export class GameThreadContentService {
         return `${awayNameRecord} @ ${homeNameRecord}`;
     }
 
-    private getSummaryDescription() {
+    private getSummaryEmbedDescription() {
         let description = `${bold("Game Status:")} ${this.gameInfo.getGameStatus().detailedState}`;    
 
         // If game not in preview state, include score in description
@@ -246,12 +250,16 @@ export class GameThreadContentService {
         fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || "TBD"}`, value: codeBlock(tables.home.toString()) });
     }
 
+    private addScoreboard(fields: APIEmbedField[]) {
+
+    }
+
     private addLiveBattingStats(fields: APIEmbedField[]) {
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
 
         let battingSummary = this.stats.buildLiveBattingStatsSummary();
-        let boxscoreInfoSummary = this.stats.buildBoxscoreInfoSummary();
+        let boxscoreInfoSummary = this.stats.buildTeamBoxscoreInfoSummary();
 
         fields.push({ name: `${awayTeamName} Batters`, value: battingSummary.away });
         fields.push({ name: awayTeamName, value: boxscoreInfoSummary.away });
@@ -286,7 +294,7 @@ export class GameThreadContentService {
         fields.push({ name: `${homeTeamName} Pitchers`, value: pitchingSummary.home });             
     }
 
-        /**
+    /**
      * Adds code block table with live pitching stats
      * 
      * **NOTE:** Code blocks don't display well on mobile,
@@ -301,5 +309,25 @@ export class GameThreadContentService {
 
         fields.push({ name: `${awayTeamName} Pitchers`, value: codeBlock(tables.away.toString()) });
         fields.push({ name: `${homeTeamName} Pitchers`, value: codeBlock(tables.home.toString()) });
+    }
+
+    private addGameBoxscoreInfo(fields: APIEmbedField[]) {
+        // Filter out items from boxscore info that are already included elsewhere
+        let boxInfo = (this.gameInfo.getBoxscore()?.info || []).filter(info => {
+            let hasValue = info.value != undefined;            
+            return hasValue && !["Weather", "Wind", "First pitch", "T", "Att", "Venue"].includes(info.label || "");
+        }).map(info => {
+            return `${bold(info.label || "")}: ${info.value}`;
+        }).join("\n");       
+        
+        fields.push({ name: "Game Info", value: boxInfo });
+    }
+
+    private addScoringPlays(fields: APIEmbedField[]) {
+
+    }
+
+    private addHighlights(fields: APIEmbedField[]) {
+        
     }
 }

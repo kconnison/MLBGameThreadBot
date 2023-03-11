@@ -138,7 +138,7 @@ export class GameInfoService {
 
     getBoxscore() {
         return this.gameObject?.liveData?.boxscore || {};
-    }
+    }    
 
     public getPlayerInfo(id: number) {
         return this.playerInfo.get(id);

@@ -329,14 +329,14 @@ export class GameThreadStatsService {
         return { home: homeStatsTable, away: awayStatsTable };
     }
 
-    public buildBoxscoreInfoSummary() {
+    public buildTeamBoxscoreInfoSummary() {
         let homeBox = this.gameInfo.getBoxscore().teams?.home;
         let homeBoxInfo = "";
 
         let awayBox = this.gameInfo.getBoxscore().teams?.away;
         let awayBoxInfo = "";
 
-        const mapBoxscoreInfoRow = (info: { title?: string; fieldList?: LabelValuePair[] }) => {
+        const mapTeamBoxscoreInfoRow = (info: { title?: string; fieldList?: LabelValuePair[] }) => {
             let title = underscore(bold(info.title || ""));
             let body = (info.fieldList || []).map(fl => {
                 return `${bold(fl.label || "")}: `
@@ -344,8 +344,8 @@ export class GameThreadStatsService {
             return `${title}\n${body}`;
         };
 
-        homeBoxInfo = (homeBox?.info || []).map(mapBoxscoreInfoRow).join("\n\n");
-        awayBoxInfo = (awayBox?.info || []).map(mapBoxscoreInfoRow).join("\n\n");
+        homeBoxInfo = (homeBox?.info || []).map(mapTeamBoxscoreInfoRow).join("\n\n");
+        awayBoxInfo = (awayBox?.info || []).map(mapTeamBoxscoreInfoRow).join("\n\n");
 
         return { home: homeBoxInfo, away: awayBoxInfo };
     }

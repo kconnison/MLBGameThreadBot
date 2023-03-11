@@ -44,7 +44,7 @@ export class GameThread {
      */
     private createDiscordThread() {
         let title = this.content.getThreadTitle();
-        let summaryEmbeds = this.content.getSummaryEmbedContent();
+        let summaryEmbeds = this.content.getSummaryEmbeds();
 
         this.logger.debug(title, JSON.stringify(summaryEmbeds));
     }
@@ -58,7 +58,7 @@ export class GameThread {
             this.logger.debug("Updating thread content...");
 
             return this.gameInfo.update(timecode).then(() => {
-                let summaryEmbeds = this.content.getSummaryEmbedContent();
+                let summaryEmbeds = this.content.getSummaryEmbeds();
                 this.logger.debug(JSON.stringify(summaryEmbeds));
             });
         }; 
