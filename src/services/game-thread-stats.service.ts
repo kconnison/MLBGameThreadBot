@@ -1,4 +1,5 @@
-import { bold } from "@discordjs/builders";
+import { bold, underscore } from "@discordjs/builders";
+import { LabelValuePair } from "mlb-stats-typescript-api/output/src";
 import { GameStatsTableColumn, GameStatsTable } from "../models/game-stats-table.model";
 import { PlayerInfo } from "../models/player-info.model";
 import { GameInfoService } from "./game-info.service";
@@ -83,7 +84,40 @@ export class GameThreadStatsService {
     }
 
     public buildStartingLineupSummary() {
-        return { home: "", away: "" };
+        let homeBox = this.gameInfo.getBoxscore().teams?.home;
+        let homeBattingOrder = homeBox?.battingOrder || [];
+        let homeLineup = "";
+
+        let awayBox = this.gameInfo.getBoxscore().teams?.away;
+        let awayBattingOrder = awayBox?.battingOrder || [];
+        let awayLineup = "";
+
+        const mapStartingLineupRows = (id: number, i: number) => {
+            let row = "";
+
+            let playerInfo = this.gameInfo.getPlayerInfo(id);
+            let stats = this.gameInfo.getBatterStatsVsProbPitcher(id);
+            
+            // add lineup number, player name, and position to row
+            row += bold(`${i+1}) ${playerInfo?.getProfile().boxscoreName} - ${playerInfo?.getBoxscore().position?.abbreviation}`);            
+
+            if( Object.keys(stats).length > 0  ) {
+                let hits = stats?.hits != undefined? stats.hits : "-"
+                let ab = stats?.atBats != undefined? stats.atBats : "-";
+                let hr = stats?.homeRuns != undefined? stats.homeRuns : "-";
+                let rbi = stats?.rbi != undefined? stats.rbi : "-";
+                let k = stats?.strikeOuts != undefined? stats.strikeOuts : "-"; 
+
+                row += `\n\t\t\t${hits}-${ab} | ${hr} HR, ${rbi} RBI, ${k} K`;
+            }   
+            
+            return row;
+        };
+
+        homeLineup = homeBattingOrder.map(mapStartingLineupRows).join("\n");
+        awayLineup = awayBattingOrder.map(mapStartingLineupRows).join("\n");
+
+        return { home: homeLineup, away: awayLineup };
     }
 
     public buildStartingLineupTables() {
@@ -152,7 +186,40 @@ export class GameThreadStatsService {
     }
 
     public buildLiveBattingStatsSummary() {
-        return { home: "", away: "" };
+        let homeBox = this.gameInfo.getBoxscore().teams?.home;
+        let homeBatters = homeBox?.batters || [];
+        let homeBattingStats = "";
+        let homeBattingNotes = (homeBox?.note || []);        
+
+        let awayBox = this.gameInfo.getBoxscore().teams?.away;
+        let awayBatters = awayBox?.batters || [];
+        let awayBattingStats = "";
+        let awayBattingNotes = (awayBox?.note || []);
+
+        const mapLiveBattingStatsRow = (id: number) => {
+            let playerInfo = this.gameInfo.getPlayerInfo(id);
+            let profile = playerInfo?.getProfile();
+            let box = playerInfo?.getBoxscore();
+            let stats = (playerInfo?.getGameStats()?.batting as any) || {};
+
+            let battingOrder = parseInt((box as any).battingOrder || "0");
+            let lineupNbr = (battingOrder % 100 == 0)? `${(battingOrder / 100).toString()}) ` : "\t";
+
+            let positions = (box as any).allPositions.map((pos: any) => { return pos.abbreviation; });
+            let namePos = `${stats.note || ""}${profile?.boxscoreName} - ${positions.join("-")}`;
+
+            return `${lineupNbr}${namePos}\t\t${playerInfo?.getGameBattingSummary()}`;
+        };
+
+        const mapBattingNotes = (note: LabelValuePair) => { return `${note.label}-${note.value}`; };
+
+        homeBattingStats = homeBatters.map(mapLiveBattingStatsRow).join("\n");
+        if( homeBattingNotes.length > 0 ) homeBattingStats += `\n\n${homeBattingNotes.map(mapBattingNotes).join("\n")}`;
+
+        awayBattingStats = awayBatters.map(mapLiveBattingStatsRow).join("\n");
+        if( awayBattingNotes.length > 0 ) awayBattingStats += `\n\n${awayBattingNotes.map(mapBattingNotes).join("\n")}`;
+
+        return { home: homeBattingStats, away: awayBattingStats };
     }
 
     public buildLiveBattingStatsTables() {
@@ -230,5 +297,56 @@ export class GameThreadStatsService {
         let homeStatTable = new GameStatsTable().setColumns(columns).setRows(homeStatRows);
 
         return { home: homeStatTable, away: awayStatTable };
+    }
+
+    public buildLivePitchingStatsSummary() {
+        let homeBox = this.gameInfo.getBoxscore().teams?.home;
+        let homePitchers = homeBox?.pitchers || [];
+        let homePitchingStats = "";
+
+        let awayBox = this.gameInfo.getBoxscore().teams?.away;
+        let awayPitchers = awayBox?.pitchers || [];
+        let awayPitchingStats = "";
+
+        const mapLivePitchingStatsRow = (id: number) => {
+            let playerInfo = this.gameInfo.getPlayerInfo(id);
+            let profile = playerInfo?.getProfile();
+            let stats = (playerInfo?.getGameStats()?.pitching as any);
+            return `${profile?.boxscoreName}${stats?.note? ` ${stats.note}` : ""}\t\t${playerInfo?.getGamePitchingSummary()}`;
+        };
+
+        homePitchingStats = homePitchers.map(mapLivePitchingStatsRow).join("\n");
+        awayPitchingStats = awayPitchers.map(mapLivePitchingStatsRow).join("\n");
+
+        return { home: homePitchingStats, away: awayPitchingStats };
+    }
+
+    // TODO
+    public buildLivePitchingStatsTables() {
+        let homeStatsTable = new GameStatsTable();
+        let awayStatsTable = new GameStatsTable();
+
+        return { home: homeStatsTable, away: awayStatsTable };
+    }
+
+    public buildBoxscoreInfoSummary() {
+        let homeBox = this.gameInfo.getBoxscore().teams?.home;
+        let homeBoxInfo = "";
+
+        let awayBox = this.gameInfo.getBoxscore().teams?.away;
+        let awayBoxInfo = "";
+
+        const mapBoxscoreInfoRow = (info: { title?: string; fieldList?: LabelValuePair[] }) => {
+            let title = underscore(bold(info.title || ""));
+            let body = (info.fieldList || []).map(fl => {
+                return `${bold(fl.label || "")}: `
+            }).join("\n");
+            return `${title}\n${body}`;
+        };
+
+        homeBoxInfo = (homeBox?.info || []).map(mapBoxscoreInfoRow).join("\n\n");
+        awayBoxInfo = (awayBox?.info || []).map(mapBoxscoreInfoRow).join("\n\n");
+
+        return { home: homeBoxInfo, away: awayBoxInfo };
     }
 }
