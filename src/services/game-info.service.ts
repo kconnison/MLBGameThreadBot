@@ -218,12 +218,12 @@ export class GameInfoService {
 
         // If we have a lineup and there is nothing in the map,
         // then call the API and build the map
-        if( homeBattingOrder.length > 0 && this.batterStats.home.size == 0 ) {
+        if( homeBattingOrder.length > 0 && probablePitchers.away && this.batterStats.home.size == 0 ) {
             this.logger.debug("Home batting order present AND no stats loaded; loading stats...");
             let awayPitchId = probablePitchers.away?.getProfile().id || 0;
             this.batterStats.home = await this.loadBatterStatsVsProbPitcher(homeBattingOrder, awayPitchId);
         }
-        if( awayBattingOrder.length > 0 && this.batterStats.away.size == 0 ) {
+        if( awayBattingOrder.length > 0 && probablePitchers.home && this.batterStats.away.size == 0 ) {
             this.logger.debug("Away batting order present AND no stats loaded; loading stats...");
             let homePitchId = probablePitchers.home?.getProfile().id || 0;
             this.batterStats.away = await this.loadBatterStatsVsProbPitcher(awayBattingOrder, homePitchId);
