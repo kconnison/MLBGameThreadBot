@@ -7,15 +7,13 @@ import cron, { Range, RecurrenceRule } from "node-schedule";
 
 export class GameThread {
     private logger: LoggerService;
-    private discord: DiscordService;
     private gameInfo: GameInfoService;
     private content: GameThreadContentService;
 
     private isDevMode: boolean = false;
 
-    constructor(private gamePk: number) {
+    constructor(private discord: DiscordService, private gamePk: number) {
         this.logger = new LoggerService(GameThread.name);
-        this.discord = new DiscordService();
         this.gameInfo = new GameInfoService();
         this.content = new GameThreadContentService(this.gameInfo);
     }
@@ -34,7 +32,7 @@ export class GameThread {
         }
 
         this.gameInfo.load(this.gamePk, timecode).then(() => {
-            this.createDiscordThread();
+            this.createDiscordThreads();
             this.scheduleUpdateJob();
         });
     }
@@ -42,11 +40,13 @@ export class GameThread {
     /**
      * Creates a new Discord thread for the game
      */
-    private createDiscordThread() {
+    private createDiscordThreads() {
         let title = this.content.getThreadTitle();
-        let summaryEmbeds = this.content.getSummaryEmbeds();
+        let embeds = this.content.getEmbeds();
 
-        this.logger.debug(title, JSON.stringify(summaryEmbeds));
+        this.logger.debug(title, JSON.stringify(embeds));
+
+        this.discord.createThreads(title, embeds);
     }
 
     /**
@@ -58,7 +58,7 @@ export class GameThread {
             this.logger.debug("Updating thread content...");
 
             return this.gameInfo.update(timecode).then(() => {
-                let summaryEmbeds = this.content.getSummaryEmbeds();
+                let summaryEmbeds = this.content.getEmbeds();
                 this.logger.debug(JSON.stringify(summaryEmbeds));
             });
         }; 

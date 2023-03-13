@@ -3,9 +3,18 @@ import MLBStatsAPI from "mlb-stats-typescript-api/output";
 import { LoggerService } from "./services/logger.service";
 import { date } from "./utils/date.utils";
 import { GameThread } from "./models/game-thread.model";
+import { DiscordService } from "./services/discord.service";
 
 const logger = new LoggerService("MLBGameThreadBot");
 logger.debug("Initializing...");
+
+// Initialize DiscordService instance
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+if( !DISCORD_TOKEN ) {
+    logger.error("No Discord token found, unable to initialize DiscordService! Exiting...");
+    process.exit();
+}
+const DISCORD_SERVICE = new DiscordService(DISCORD_TOKEN);
 
 // Determine if Bot is focused on a single team
 const TEAM_ID = process.env.TEAM_ID? parseInt(process.env.TEAM_ID) : null;
@@ -24,6 +33,7 @@ if( process.env.NODE_ENV == 'production' ) {
 } else {
     logger.debug("Running in DEV mode!");    
     isDevMode = true;
+    DISCORD_SERVICE.setDevMode(true);
 
     const SCHEDULE_TIMECODE = process.env.DEV_TS_SCHEDULE || date.format.toTimecode(new Date());
     let dateOverride = date.format.fromTimecode(SCHEDULE_TIMECODE);
@@ -42,7 +52,7 @@ async function initializeGameThreads(scheduleDate: Date = new Date()) {
 
     gamePks.forEach(async gamePk => {
         if( gamePk ) {            
-            let gameThread = new GameThread(gamePk);
+            let gameThread = new GameThread(DISCORD_SERVICE, gamePk);
             gameThread.setDevMode(isDevMode);
             gameThread.post();
         }                
