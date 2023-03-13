@@ -44,44 +44,58 @@ export class GameThreadContentService {
         return title;
     }
 
-    public getSummaryEmbeds() {
+    public getEmbeds() {
         let embeds = [];
         try {
             let gamePk = this.gameInfo.gamePk;
             let homeTeamId = this.gameInfo.getHomeTeam().id || 0;
             let awayTeamId = this.gameInfo.getAwayTeam().id || 0;
 
-            let embed = new EmbedBuilder()
+            let summaryEmbed = new EmbedBuilder()
                 .setAuthor({ name: "Major League Baseball", iconURL: content.icon.getSportIcon(1, 100), url: "https://www.mlb.com/" })
                 .setTitle(this.getSummaryEmbedTitle())
                 .setURL(content.link.getMLBGameDayLink(gamePk))
                 .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
-                .setDescription(this.getSummaryEmbedDescription())
+                .setDescription(this.getSummaryEmbedDescription());
+            let playerInfoEmbed = new EmbedBuilder();
+            let gameContentEmbed = new EmbedBuilder();
 
-            let fields: APIEmbedField[] = [];
-            this.addGameInfo(fields);
+            let summaryFields: APIEmbedField[] = [];
+            let playerInfoFields: APIEmbedField[] = [];
+            let gameContentFields: APIEmbedField[] = [];
 
-            this.logger.debug(`Game State: ${this.gameInfo.getGameStatus().abstractGameState}`)
+            this.addGameInfo(summaryFields);
+
+            this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().abstractGameState}`);
 
             // If game in Preview state, show probable pitchers 
             // & starting lineup w/ stats against probable pitcher
             if( this.gameInfo.isGameStatePreview() ) {                
-                this.addProbablePitchers(fields);
-                this.addStartingLineup(fields);
+                this.addProbablePitchers(playerInfoFields);
+                this.addStartingLineup(playerInfoFields);
 
             // Game is Live/Final, show in-game stats table
             // & other in-game information
             } else {
-                this.addScoreboard(fields);
-                this.addLiveBattingStats(fields);
-                this.addLivePitchingStats(fields);
-                this.addGameBoxscoreInfo(fields);
-                this.addScoringPlays(fields);
-                this.addHighlights(fields);
+                this.addScoreboard(summaryFields);
+
+                this.addLiveBattingStats(playerInfoFields);
+                this.addLivePitchingStats(playerInfoFields);
+                this.addGameBoxscoreInfo(playerInfoFields);
+                this.addScoringPlays(playerInfoFields);
+
+                this.addHighlights(gameContentFields);
             }
 
-            embed = embed.addFields(fields)
-            embeds.push(embed);
+            summaryEmbed = summaryEmbed.addFields(summaryFields);
+            playerInfoEmbed = playerInfoEmbed.addFields(playerInfoFields);                        
+            embeds.push(summaryEmbed, playerInfoEmbed);
+
+            // Add game content embed only when there is content
+            if( gameContentFields.length > 0 ) {
+                gameContentEmbed = gameContentEmbed.addFields(gameContentFields);
+                embeds.push(gameContentEmbed);
+            }
 
         } catch(e) {
             this.logger.error(e);
