@@ -41,27 +41,31 @@ export class DiscordService {
             
         }
 
-        return guilds.map(async (guild) => {
-            let pMLBGameChannel: Promise<ForumChannel>;
-            let mlbGameChannel = (guild.channels.cache.find(channel => {
-                return channel.name == GAME_THREAD_CHANNEL_NAME && channel.type == ChannelType.GuildForum;
-            }) as ForumChannel);            
-
-            if( !mlbGameChannel ) {
-                this.logger.debug(`${GAME_THREAD_CHANNEL_NAME} channel not found, creating it...`);
-                pMLBGameChannel = guild.channels.create({ 
-                    name: GAME_THREAD_CHANNEL_NAME, 
-                    type: ChannelType.GuildForum,
-                    topic: "MLB Game Threads",
-                    defaultAutoArchiveDuration: ThreadAutoArchiveDuration.OneDay
+        return guilds.map((guild) => {
+            return guild.channels.fetch()
+            .then((channels) => {
+                let existingThreadChannel = channels.find(channel => {
+                    return channel?.name == GAME_THREAD_CHANNEL_NAME && channel?.type == ChannelType.GuildForum;
                 });
-            } else {
-                this.logger.debug(`Found existing ${GAME_THREAD_CHANNEL_NAME} channel!`);
-                pMLBGameChannel = Promise.resolve(mlbGameChannel);
-            }
-            
-            return pMLBGameChannel.then((ch) => {
-                return ch.threads.create({
+                if( existingThreadChannel ) return (existingThreadChannel as ForumChannel);
+
+            }).then((channel) => {
+                if( !channel ) {
+                    this.logger.debug(`[GUILD_${guild.id}] ${GAME_THREAD_CHANNEL_NAME} channel not found, creating it...`);
+                    return guild.channels.create({ 
+                        name: GAME_THREAD_CHANNEL_NAME, 
+                        type: ChannelType.GuildForum,
+                        topic: "MLB Game Threads",
+                        defaultAutoArchiveDuration: ThreadAutoArchiveDuration.OneDay
+                    });
+
+                } else {
+                    this.logger.debug(`[GUILD_${guild.id}] Found existing ${GAME_THREAD_CHANNEL_NAME} channel!`);
+                    return channel;
+                }
+
+            }).then((channel) => {
+                return channel.threads.create({
                     name: name,
                     message: {
                         embeds: embeds
@@ -73,19 +77,23 @@ export class DiscordService {
 
     
     public editThreads(threadRefs: ThreadChannel[], embeds: EmbedBuilder[]) {
-        threadRefs.forEach(th => {
-            this.logger.debug(`Fetching starting message for thread: ${th.id}`);
-            th.fetchStarterMessage().then((msg) => {
+        threadRefs.forEach(thread => {
+            this.logger.debug(`[THREAD_${thread.id}] Fetching starting message...`);
+            thread.fetchStarterMessage()
+            .then((msg) => {
                 if( msg ) {
-                    this.logger.debug(`Starting message found (${msg.id}), editing...`);
+                    this.logger.debug(`[THREAD_${thread.id}] Starting message found, editing...`);
                     msg.edit({
                         embeds: embeds
                     }).then((msg) => {
-                        this.logger.debug(`...starting message (${msg.id}) edited!`);
+                        this.logger.debug(`[THREAD_${thread.id}] ...starting message edited successfully!`);
 
                     }).catch(err => {
                         this.logger.error(err);
-                    });                    
+                    });                
+                        
+                } else {
+                    this.logger.warn(`[THREAD_${thread.id}] Starting message not found!`);
                 }
             });
         });
