@@ -4,11 +4,14 @@ import { GameThreadContentService } from "../services/game-thread-content.servic
 import { LoggerService } from "../services/logger.service";
 import { date } from "../utils/date.utils";
 import cron, { Range, RecurrenceRule } from "node-schedule";
+import { ThreadChannel } from "discord.js";
 
 export class GameThread {
     private logger: LoggerService;
     private gameInfo: GameInfoService;
     private content: GameThreadContentService;
+
+    private discordThreadRefs: ThreadChannel[] = [];
 
     private isDevMode: boolean = false;
 
@@ -31,7 +34,7 @@ export class GameThread {
             timecode = process.env.DEV_TS_SCHEDULE || date.format.toTimecode(new Date());
         }
 
-        this.gameInfo.load(this.gamePk, timecode).then(() => {
+        this.gameInfo.load(this.gamePk, timecode).then(async () => {
             this.createDiscordThreads();
             this.scheduleUpdateJob();
         });
@@ -44,9 +47,11 @@ export class GameThread {
         let title = this.content.getThreadTitle();
         let embeds = this.content.getEmbeds();
 
-        this.logger.debug(title, JSON.stringify(embeds));
-
-        this.discord.createThreads(title, embeds);
+        this.discord.createThreads(title, embeds).then((pThreadRefs) => {
+            Promise.all(pThreadRefs).then(threadRefs => {
+                this.discordThreadRefs = threadRefs;
+            })
+        });
     }
 
     /**
@@ -58,8 +63,8 @@ export class GameThread {
             this.logger.debug("Updating thread content...");
 
             return this.gameInfo.update(timecode).then(() => {
-                let summaryEmbeds = this.content.getEmbeds();
-                this.logger.debug(JSON.stringify(summaryEmbeds));
+                let embeds = this.content.getEmbeds();
+                this.discord.editThreads(this.discordThreadRefs, embeds);
             });
         }; 
 
@@ -67,7 +72,7 @@ export class GameThread {
         // with a list of timecodes to use for updates
         if( this.isDevMode ) {
             let UPDATE_TIMECODES = (process.env.DEV_TS_UPDATE || "").split(",");
-            updateJob = cron.scheduleJob({second: new Range(0, 59, 10)}, async() => {
+            updateJob = cron.scheduleJob({second: new Range(0, 59, 20)}, async() => {
                 if( UPDATE_TIMECODES.length > 0 ) {
                     let timecode = UPDATE_TIMECODES.shift();
                     await updateCallback(timecode);
