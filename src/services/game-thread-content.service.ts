@@ -72,6 +72,7 @@ export class GameThreadContentService {
             // & starting lineup w/ stats against probable pitcher
             if( this.gameInfo.isGameStatePreview() ) {                
                 this.addProbablePitchers(playerInfoFields);
+                this.addSpacer(playerInfoFields);
                 this.addStartingLineup(playerInfoFields);
 
             // Game is Live/Final, show in-game stats table
@@ -80,8 +81,11 @@ export class GameThreadContentService {
                 this.addScoreboard(summaryFields);
 
                 this.addLiveBattingStats(playerInfoFields);
+                this.addSpacer(playerInfoFields);
                 this.addLivePitchingStats(playerInfoFields);
+                this.addSpacer(playerInfoFields);
                 this.addGameBoxscoreInfo(playerInfoFields);
+                this.addSpacer(playerInfoFields);
                 this.addScoringPlays(playerInfoFields);
 
                 this.addHighlights(gameContentFields);
@@ -170,6 +174,8 @@ export class GameThreadContentService {
             fields.push({ name: "Wind", value: wind, inline: true });
         }
 
+        fields.push({ name: '\u200B', value: '\u200B' });
+
         // Add TV/Radio Info
         this.addBroadcastInfo(fields);
 
@@ -186,9 +192,7 @@ export class GameThreadContentService {
                 + `${bold("First Pitch:")} ${firstPitch}\n`
                 + (gameLength? `${bold("Length:")} ${gameLength}`: "")
             fields.push({ name: "Game Info", value: gameInfoValue });
-        }
-
-        fields.push({ name: '\u200B', value: '\u200B' });
+        }        
     }
 
     private addBroadcastInfo(fields: APIEmbedField[]) {
@@ -242,6 +246,7 @@ export class GameThreadContentService {
         let lineups = this.stats.buildStartingLineupSummary();
 
         fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || ""}`, value: lineups.away });
+        this.addSpacer(fields);
         fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: lineups.home });        
     }
 
@@ -265,9 +270,9 @@ export class GameThreadContentService {
     }
 
     private addScoreboard(fields: APIEmbedField[]) {
-        let table = this.stats.buildScoreboardTable();
+        let summary = this.stats.buildScoreboardSummary();
 
-        fields.push({ name: "\u200B", value: codeBlock(table.toString()) });
+        fields.push({ name: "\u200B", value: summary });
     }
 
     private addLiveBattingStats(fields: APIEmbedField[]) {
@@ -278,9 +283,16 @@ export class GameThreadContentService {
         let boxscoreInfoSummary = this.stats.buildTeamBoxscoreInfoSummary();
 
         fields.push({ name: `${awayTeamName} Batters`, value: battingSummary.away });
-        fields.push({ name: awayTeamName, value: boxscoreInfoSummary.away });
+        boxscoreInfoSummary.away.forEach((summary) => {
+            fields.push({ name: summary.title, value: summary.body });
+        });
+
+        this.addSpacer(fields);
+        
         fields.push({ name: `${homeTeamName} Batters`, value: battingSummary.home });   
-        fields.push({ name: homeTeamName, value: boxscoreInfoSummary.home });     
+        boxscoreInfoSummary.home.forEach((summary) => {
+            fields.push({ name: summary.title, value: summary.body });
+        });   
     }
 
     /**
@@ -345,5 +357,9 @@ export class GameThreadContentService {
 
     private addHighlights(fields: APIEmbedField[]) {
         
+    }
+
+    private addSpacer(fields: APIEmbedField[]) {
+        fields.push({ name: '\u200B', value: '\u200B' });
     }
 }
