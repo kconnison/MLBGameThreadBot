@@ -1,4 +1,4 @@
-import { ChannelType, Client, Collection, EmbedBuilder, Events, ForumChannel, GatewayIntentBits, ThreadAutoArchiveDuration, ThreadChannel } from "discord.js";
+import { ChannelType, Client, Collection, EmbedBuilder, Events, ForumChannel, GatewayIntentBits, PermissionsBitField, SortOrderType, ThreadAutoArchiveDuration, ThreadChannel } from "discord.js";
 import { LoggerService } from "./logger.service";
 
 const GAME_THREAD_CHANNEL_NAME = "mlb-game-threads";
@@ -56,7 +56,24 @@ export class DiscordService {
                         name: GAME_THREAD_CHANNEL_NAME, 
                         type: ChannelType.GuildForum,
                         topic: "MLB Game Threads",
-                        defaultAutoArchiveDuration: ThreadAutoArchiveDuration.OneDay
+                        defaultAutoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
+                        defaultSortOrder: SortOrderType.CreationDate,
+                        permissionOverwrites: [
+                            { 
+                                id: guild.client.user.id,
+                                allow: [
+                                    PermissionsBitField.Flags.CreatePublicThreads,
+                                    PermissionsBitField.Flags.ManageThreads
+                                ]
+                            },
+                            {
+                                id: guild.roles.everyone,
+                                deny: [
+                                    PermissionsBitField.Flags.CreatePublicThreads,
+                                    PermissionsBitField.Flags.ManageThreads
+                                ]
+                            }
+                        ]
                     });
 
                 } else {
@@ -91,7 +108,7 @@ export class DiscordService {
                     }).catch(err => {
                         this.logger.error(err);
                     });                
-                        
+
                 } else {
                     this.logger.warn(`[THREAD_${thread.id}] Starting message not found!`);
                 }
