@@ -51,54 +51,57 @@ export class GameThreadContentService {
             let homeTeamId = this.gameInfo.getHomeTeam().id || 0;
             let awayTeamId = this.gameInfo.getAwayTeam().id || 0;
 
+            let summaryFields: APIEmbedField[] = [];
+            this.addGameInfo(summaryFields);
+
             let summaryEmbed = new EmbedBuilder()
                 .setAuthor({ name: "Major League Baseball", iconURL: content.icon.getSportIcon(1, 100), url: "https://www.mlb.com/" })
                 .setTitle(this.getSummaryEmbedTitle())
                 .setURL(content.link.getMLBGameDayLink(gamePk))
                 .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
-                .setDescription(this.getSummaryEmbedDescription());
-            let playerInfoEmbed = new EmbedBuilder();
-            let gameContentEmbed = new EmbedBuilder();
-
-            let summaryFields: APIEmbedField[] = [];
-            let playerInfoFields: APIEmbedField[] = [];
-            let gameContentFields: APIEmbedField[] = [];
-
-            this.addGameInfo(summaryFields);
+                .setDescription(this.getSummaryEmbedDescription())
+                .addFields(summaryFields);
+            embeds.push(summaryEmbed);
 
             this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().abstractGameState}`);
 
             // If game in Preview state, show probable pitchers 
             // & starting lineup w/ stats against probable pitcher
-            if( this.gameInfo.isGameStatePreview() ) {                
-                this.addProbablePitchers(playerInfoFields);
-                this.addSpacer(playerInfoFields);
-                this.addStartingLineup(playerInfoFields);
+            if( this.gameInfo.isGameStatePreview() ) {        
+                let pitcherFields: APIEmbedField[] = [];
+                let lineupFields: APIEmbedField[] = [];
+                
+                this.addProbablePitchers(pitcherFields);
+                this.addStartingLineup(lineupFields);
+
+                let pitcherEmbed = new EmbedBuilder().addFields(pitcherFields);
+                let lineupEmbed = new EmbedBuilder().addFields(lineupFields);
+                embeds.push(pitcherEmbed, lineupEmbed);
 
             // Game is Live/Final, show in-game stats table
             // & other in-game information
             } else {
-                this.addScoreboard(summaryFields);
+                let scoreboardFields: APIEmbedField[] = [];
+                let battingFields: APIEmbedField[] = [];
+                let pitchingFields: APIEmbedField[] = [];
+                let boxscoreFields: APIEmbedField[] = [];
+                let scoreHighlightFields: APIEmbedField[] = [];
 
-                this.addLiveBattingStats(playerInfoFields);
-                this.addSpacer(playerInfoFields);
-                this.addLivePitchingStats(playerInfoFields);
-                this.addSpacer(playerInfoFields);
-                this.addGameBoxscoreInfo(playerInfoFields);
-                this.addSpacer(playerInfoFields);
-                this.addScoringPlays(playerInfoFields);
+                this.addScoreboard(scoreboardFields);
 
-                this.addHighlights(gameContentFields);
-            }
+                this.addLiveBattingStats(battingFields);
+                this.addLivePitchingStats(pitchingFields);
+                this.addGameBoxscoreInfo(boxscoreFields);
 
-            summaryEmbed = summaryEmbed.addFields(summaryFields);
-            playerInfoEmbed = playerInfoEmbed.addFields(playerInfoFields);                        
-            embeds.push(summaryEmbed, playerInfoEmbed);
+                this.addScoringPlays(scoreHighlightFields);
+                this.addHighlights(scoreHighlightFields);
 
-            // Add game content embed only when there is content
-            if( gameContentFields.length > 0 ) {
-                gameContentEmbed = gameContentEmbed.addFields(gameContentFields);
-                embeds.push(gameContentEmbed);
+                let scoreboardEmbed = new EmbedBuilder().addFields(scoreboardFields);
+                let battingEmbed = new EmbedBuilder().addFields(battingFields);
+                let pitchingEmbed = new EmbedBuilder().addFields(pitchingFields);
+                let boxscoreInfoEmbed = new EmbedBuilder().addFields(boxscoreFields);
+                let scoreHighlightsEmbed = new EmbedBuilder().addFields(scoreHighlightFields);
+                embeds.push(scoreboardEmbed, battingEmbed, pitchingEmbed, boxscoreInfoEmbed, scoreHighlightsEmbed);
             }
 
         } catch(e) {
