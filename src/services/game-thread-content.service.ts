@@ -239,22 +239,6 @@ export class GameThreadContentService {
         fields.push({ name: "Radio", value: formatBroadcastFeeds(broadcasts.radio), inline: true }); 
     }
 
-    private addProbablePitchers(fields: APIEmbedField[]) {
-        let probablePitchersSummary = this.stats.buildProbablePitchersSummary();
-        fields.push({ name: "Probable Pitchers (Season Stats)", value: probablePitchersSummary });
-    }
-
-    /**
-     * Adds code block table with probable pitcher stats
-     * 
-     * **NOTE:** Code blocks don't display well on mobile,
-     * but leaving this here in case Discord ever has better support for tables
-     * @param fields 
-     */
-    private addProbablePitchersTable(fields: APIEmbedField[]) {
-        let table = this.stats.buildProbablePitchersTable();
-        fields.push({ name: "Probable Pitchers (Season Stats)", value: codeBlock(table.toString()) })
-    }
 
     private addStartingLineup(fields: APIEmbedField[]) {
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
@@ -269,30 +253,6 @@ export class GameThreadContentService {
         fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: lineups.home });        
     }
 
-    /**
-     * Adds code block table with starting lineups vs probable pitchers stats
-     * 
-     * **NOTE:** Code blocks don't display well on mobile,
-     * but leaving this here in case Discord ever has better support for tables     
-     * @param fields 
-     */
-    private addStartingLineupTable(fields: APIEmbedField[]) {
-        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-
-        let probablePitchers = this.gameInfo.getProbablePitchers();
-
-        let tables = this.stats.buildStartingLineupTables();
-
-        fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || "TBD"}`, value: codeBlock(tables.away.toString()) });
-        fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || "TBD"}`, value: codeBlock(tables.home.toString()) });
-    }
-
-    private addScoreboard(fields: APIEmbedField[]) {
-        let summary = this.stats.buildScoreboardSummary();
-
-        fields.push({ name: "Score", value: summary });
-    }
 
     private addTeamBoxscoreInfo(homeFields: APIEmbedField[], awayFields: APIEmbedField[]) {
         let boxscoreInfoSummary = this.stats.buildTeamBoxscoreInfoSummary();
@@ -306,22 +266,6 @@ export class GameThreadContentService {
         });   
     }
 
-    /**
-     * Adds code block table with live batting stats
-     * 
-     * **NOTE:** Code blocks don't display well on mobile,
-     * but leaving this here in case Discord ever has better support for tables       
-     * @param fields 
-     */
-    private addLiveBattingStatsTable(fields: APIEmbedField[]) {
-        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-
-        let tables = this.stats.buildLiveBattingStatsTables();
-
-        fields.push({ name: `${awayTeamName} Batters`, value: codeBlock(tables.away.toString()) });
-        fields.push({ name: `${homeTeamName} Batters`, value: codeBlock(tables.home.toString()) });
-    }
 
     private addLivePitchingStats(fields: APIEmbedField[]) {
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
@@ -333,22 +277,6 @@ export class GameThreadContentService {
         fields.push({ name: `${homeTeamName} Pitchers`, value: pitchingSummary.home });             
     }
 
-    /**
-     * Adds code block table with live pitching stats
-     * 
-     * **NOTE:** Code blocks don't display well on mobile,
-     * but leaving this here in case Discord ever has better support for tables       
-     * @param fields 
-     */
-    private addLivePitchingStatsTable(fields: APIEmbedField[]) {
-        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-
-        let tables = this.stats.buildLivePitchingStatsTables();
-
-        fields.push({ name: `${awayTeamName} Pitchers`, value: codeBlock(tables.away.toString()) });
-        fields.push({ name: `${homeTeamName} Pitchers`, value: codeBlock(tables.home.toString()) });
-    }
 
     private getGameBoxscoreInfo() {
         // Filter out items from boxscore info that are already included elsewhere
