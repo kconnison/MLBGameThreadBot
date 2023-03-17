@@ -70,6 +70,7 @@ export class DiscordService {
                                 id: guild.roles.everyone,
                                 deny: [
                                     PermissionsBitField.Flags.CreatePublicThreads,
+                                    PermissionsBitField.Flags.CreatePrivateThreads,
                                     PermissionsBitField.Flags.ManageThreads
                                 ]
                             }
