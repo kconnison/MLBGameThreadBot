@@ -254,7 +254,7 @@ export class GameThreadStatsService {
             let stats = (playerInfo?.getGameStats()?.batting as any) || {};
 
             let battingOrder = parseInt((box as any).battingOrder || "0");
-            let lineupNbr = (battingOrder % 100 == 0)? bold(`${(battingOrder / 100).toString()}) `) : "";
+            let lineupNbr = (battingOrder % 100 == 0)? bold(`${(battingOrder / 100).toString()}) `) : "> ";
 
             let positions = (box as any).allPositions.map((pos: any) => { return pos.abbreviation; });
             let namePos = `${stats.note || ""}${profile?.boxscoreName} - ${positions.join("-")}`;
