@@ -48,13 +48,19 @@ export class GameThreadContentService {
         let embeds = [];
         try {
             let gamePk = this.gameInfo.gamePk;
-            let homeTeamId = this.gameInfo.getHomeTeam().id || 0;
-            let awayTeamId = this.gameInfo.getAwayTeam().id || 0;
+            let homeTeam = this.gameInfo.getHomeTeam();
+            let homeTeamId = homeTeam.id || 0;
+            let awayTeam = this.gameInfo.getAwayTeam();
+            let awayTeamId = awayTeam.id || 0;
+
+            const getBaseEmbed = () => {
+                return new EmbedBuilder().setColor(0x72767D);
+            };
 
             let summaryFields: APIEmbedField[] = [];
             this.addGameInfo(summaryFields);
 
-            let summaryEmbed = new EmbedBuilder()
+            let summaryEmbed = getBaseEmbed()
                 .setAuthor({ name: "Major League Baseball", iconURL: content.icon.getSportIcon(1, 100), url: "https://www.mlb.com/" })
                 .setTitle(this.getSummaryEmbedTitle())
                 .setURL(content.link.getMLBGameDayLink(gamePk))
@@ -68,40 +74,50 @@ export class GameThreadContentService {
             // If game in Preview state, show probable pitchers 
             // & starting lineup w/ stats against probable pitcher
             if( this.gameInfo.isGameStatePreview() ) {        
-                let pitcherFields: APIEmbedField[] = [];
-                let lineupFields: APIEmbedField[] = [];
-                
-                this.addProbablePitchers(pitcherFields);
+                let lineupFields: APIEmbedField[] = [];                
                 this.addStartingLineup(lineupFields);
 
-                let pitcherEmbed = new EmbedBuilder().addFields(pitcherFields);
-                let lineupEmbed = new EmbedBuilder().addFields(lineupFields);
+                let pitcherEmbed = getBaseEmbed()
+                    .setTitle("Probable Pitchers (Season Stats)")
+                    .setDescription(this.stats.buildProbablePitchersSummary());
+                let lineupEmbed = getBaseEmbed()
+                    .setTitle("Starting Lineups vs Probable Pitchers")
+                    .addFields(lineupFields);
+
                 embeds.push(pitcherEmbed, lineupEmbed);
 
             // Game is Live/Final, show in-game stats table
             // & other in-game information
             } else {
-                let scoreboardFields: APIEmbedField[] = [];
-                let battingFields: APIEmbedField[] = [];
+                let awayBoxscoreFields: APIEmbedField[] = [];
+                let homeBoxscoreFields: APIEmbedField[] = [];
                 let pitchingFields: APIEmbedField[] = [];
-                let boxscoreFields: APIEmbedField[] = [];
                 let scoreHighlightFields: APIEmbedField[] = [];
 
-                this.addScoreboard(scoreboardFields);
-
-                this.addLiveBattingStats(battingFields);
-                this.addLivePitchingStats(pitchingFields);
-                this.addGameBoxscoreInfo(boxscoreFields);
+                let battingSummary = this.stats.buildLiveBattingStatsSummary();
+                this.addTeamBoxscoreInfo(homeBoxscoreFields, awayBoxscoreFields);
+                this.addLivePitchingStats(pitchingFields);                
 
                 this.addScoringPlays(scoreHighlightFields);
                 this.addHighlights(scoreHighlightFields);
 
-                let scoreboardEmbed = new EmbedBuilder().addFields(scoreboardFields);
-                let battingEmbed = new EmbedBuilder().addFields(battingFields);
-                let pitchingEmbed = new EmbedBuilder().addFields(pitchingFields);
-                let boxscoreInfoEmbed = new EmbedBuilder().addFields(boxscoreFields);
-                let scoreHighlightsEmbed = new EmbedBuilder().addFields(scoreHighlightFields);
-                embeds.push(scoreboardEmbed, battingEmbed, pitchingEmbed, boxscoreInfoEmbed, scoreHighlightsEmbed);
+                let scoreSummary = this.stats.buildScoreboardSummary();
+                let scoreboardEmbed = getBaseEmbed().setDescription(scoreSummary);
+
+                let awayBattingEmbed = getBaseEmbed()
+                    .setTitle(awayTeam.teamName || "")
+                    .setDescription(battingSummary.away)
+                    .addFields(awayBoxscoreFields);
+                let homeBattingEmbed = getBaseEmbed()
+                    .setTitle(homeTeam.teamName || "")
+                    .setDescription(battingSummary.home)
+                    .addFields(homeBoxscoreFields);
+
+                let pitchingEmbed = getBaseEmbed().setTitle("Pitching").addFields(pitchingFields);
+                let boxscoreInfoEmbed = getBaseEmbed().setTitle("Game Info").setDescription(this.getGameBoxscoreInfo());
+                let scoreHighlightsEmbed = getBaseEmbed().addFields(scoreHighlightFields);
+
+                embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed, scoreHighlightsEmbed);
             }
 
         } catch(e) {
@@ -275,26 +291,18 @@ export class GameThreadContentService {
     private addScoreboard(fields: APIEmbedField[]) {
         let summary = this.stats.buildScoreboardSummary();
 
-        fields.push({ name: "\u200B", value: summary });
+        fields.push({ name: "Score", value: summary });
     }
 
-    private addLiveBattingStats(fields: APIEmbedField[]) {
-        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-
-        let battingSummary = this.stats.buildLiveBattingStatsSummary();
+    private addTeamBoxscoreInfo(homeFields: APIEmbedField[], awayFields: APIEmbedField[]) {
         let boxscoreInfoSummary = this.stats.buildTeamBoxscoreInfoSummary();
 
-        fields.push({ name: `${awayTeamName} Batters`, value: battingSummary.away });
         boxscoreInfoSummary.away.forEach((summary) => {
-            fields.push({ name: summary.title, value: summary.body });
+            awayFields.push({ name: summary.title, value: summary.body });
         });
-
-        this.addSpacer(fields);
         
-        fields.push({ name: `${homeTeamName} Batters`, value: battingSummary.home });   
         boxscoreInfoSummary.home.forEach((summary) => {
-            fields.push({ name: summary.title, value: summary.body });
+            homeFields.push({ name: summary.title, value: summary.body });
         });   
     }
 
@@ -342,24 +350,22 @@ export class GameThreadContentService {
         fields.push({ name: `${homeTeamName} Pitchers`, value: codeBlock(tables.home.toString()) });
     }
 
-    private addGameBoxscoreInfo(fields: APIEmbedField[]) {
+    private getGameBoxscoreInfo() {
         // Filter out items from boxscore info that are already included elsewhere
-        let boxInfo = (this.gameInfo.getBoxscore()?.info || []).filter(info => {
+        return (this.gameInfo.getBoxscore()?.info || []).filter(info => {
             let hasValue = info.value != undefined;            
             return hasValue && !["Weather", "Wind", "First pitch", "T", "Att", "Venue"].includes(info.label || "");
         }).map(info => {
             return `${bold(info.label || "")}: ${info.value}`;
-        }).join("\n");       
-        
-        fields.push({ name: "Game Info", value: boxInfo });
+        }).join("\n");
     }
 
     private addScoringPlays(fields: APIEmbedField[]) {
-
+        fields.push({ name: "Scoring Plays", value: "< COMING SOON >" });
     }
 
     private addHighlights(fields: APIEmbedField[]) {
-        
+        fields.push({ name: "Highlights", value: "< COMING SOON >" });
     }
 
     private addSpacer(fields: APIEmbedField[]) {
