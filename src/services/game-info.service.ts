@@ -58,11 +58,11 @@ export class GameInfoService {
         return;
     }
 
-    getDateTime() {
+    public getDateTime() {
         return this.gameObject?.gameData?.datetime || {};
     }
 
-    getGameStatus() {
+    public getGameStatus() {
         return this.gameObject?.gameData?.status || {};
     }
 
@@ -70,7 +70,7 @@ export class GameInfoService {
      * Determine if game state is "Preview"
      * @returns 
      */
-    isGameStatePreview() {
+    public isGameStatePreview() {
         return (this.getGameStatus().abstractGameState == "Preview");
     }
 
@@ -78,7 +78,7 @@ export class GameInfoService {
      * Determine if game state is "Live"
      * @returns 
      */
-    isGameStateLive() {
+    public isGameStateLive() {
         return (this.getGameStatus().abstractGameState == "Live");
     }
 
@@ -86,31 +86,31 @@ export class GameInfoService {
      * Determine if game state is "Final"
      * @returns 
      */
-    isGameStateFinal() {
+    public isGameStateFinal() {
         return (this.getGameStatus().abstractGameState == "Final");
     }
 
-    getHomeTeam() {
+    public getHomeTeam() {
         return this.gameObject?.gameData?.teams?.home || {};
     }
 
-    getAwayTeam() {
+    public getAwayTeam() {
         return this.gameObject?.gameData?.teams?.away || {};
     }
 
-    getVenue() {
+    public getVenue() {
         return this.gameObject?.gameData?.venue || {};
     }
 
-    getWeather() {
+    public getWeather() {
         return (this.gameObject?.gameData?.weather as any) || {};
     }
 
-    getGameInfo() {
+    public getGameInfo() {
         return (this.gameObject?.gameData?.gameInfo as any) || {};
     }
 
-    getProbablePitchers() {
+    public getProbablePitchers() {
         let probablePitchers = (this.gameObject?.gameData?.probablePitchers as any) || {};
         let homePitcherId = probablePitchers.home?.id;
         let homePitcher = this.getPlayerInfo(homePitcherId);
@@ -128,11 +128,11 @@ export class GameInfoService {
         return this.batterStats.away.get(id);
     }
 
-    getPlays() {
+    public getPlays() {
         return this.gameObject?.liveData?.plays || {};
     }
 
-    getScoringPlays() {
+    public getScoringPlays() {
         let retScoringPlays: any[] = [];
         let allPlays = (this.getPlays().allPlays as any[])
         let scoringPlays = (this.getPlays().scoringPlays as number[]);
@@ -144,11 +144,20 @@ export class GameInfoService {
         return retScoringPlays;
     }
 
-    getLinescore() {
+    public getHighlights() {
+        let highlights: any[] = (this.gameContentObject as any)?.highlights?.highlights?.items || [];
+        return highlights.sort((a,b) => {
+            let aDt = new Date(a.date);
+            let bDt = new Date(b.date);
+            return (a < b? -1 : (a > b? 1 : 0));
+        });
+    }
+
+    public getLinescore() {
         return this.gameObject?.liveData?.linescore || {};
     }
 
-    getBoxscore() {
+    public getBoxscore() {
         return this.gameObject?.liveData?.boxscore || {};
     }    
 

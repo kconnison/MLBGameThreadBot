@@ -1,4 +1,4 @@
-import { bold, codeBlock, EmbedBuilder } from "@discordjs/builders";
+import { bold, EmbedBuilder, hyperlink } from "@discordjs/builders";
 import { APIEmbedField } from "discord.js";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
@@ -290,29 +290,40 @@ export class GameThreadContentService {
 
     private addScoringPlays(fields: APIEmbedField[]) {
         let scoringPlays = this.gameInfo.getScoringPlays();
-
-        let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
-        let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
-        const mapScoringPlays = (play: any) => {
-            let halfInning: string = play.about.halfInning;          
-            let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)} ${play.about.inning}`;
-
-            let playDescription = play.result.description;
-            
-            let homeScore = play.result.homeScore;
-            let awayScore = play.result.awayScore;
-            let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
-                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
-
-            return `${inningDescription} - ${playDescription} - ${scoreDescription}`;
-        };
-
-        let scoringPlaysValue = scoringPlays.map(mapScoringPlays).join("\n");
-        fields.push({ name: "Scoring Plays", value: scoringPlaysValue });
+        if( scoringPlays.length > 0 ) {
+            let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
+            let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
+            const mapScoringPlays = (play: any) => {
+                let halfInning: string = play.about.halfInning;          
+                let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)} ${play.about.inning}`;
+    
+                let playDescription = play.result.description;
+                
+                let homeScore = play.result.homeScore;
+                let awayScore = play.result.awayScore;
+                let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
+                    (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
+    
+                return `${inningDescription} - ${playDescription} - ${scoreDescription}`;
+            };
+    
+            let scoringPlaysValue = scoringPlays.map(mapScoringPlays).join("\n");
+            fields.push({ name: "Scoring Plays", value: scoringPlaysValue });
+        }
     }
 
     private addHighlights(fields: APIEmbedField[]) {
-        fields.push({ name: "Highlights", value: "< COMING SOON >" });
+        let highlights = this.gameInfo.getHighlights();
+        if( highlights.length > 0 ) {
+            const mapHighlights = (highlight: any) => {
+                let url = highlight.playbacks[0].url;
+                let linkTitle = `${highlight.title} (${highlight.duration})`;
+                return hyperlink(linkTitle, url);
+            };
+
+            let highlightsValue = highlights.map(mapHighlights).join("\n");
+            fields.push({ name: "Highlights", value: highlightsValue });
+        }
     }
 
     private addSpacer(fields: APIEmbedField[]) {
