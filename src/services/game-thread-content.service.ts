@@ -289,7 +289,26 @@ export class GameThreadContentService {
     }
 
     private addScoringPlays(fields: APIEmbedField[]) {
-        fields.push({ name: "Scoring Plays", value: "< COMING SOON >" });
+        let scoringPlays = this.gameInfo.getScoringPlays();
+
+        let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
+        let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
+        const mapScoringPlays = (play: any) => {
+            let halfInning: string = play.about.halfInning;          
+            let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)} ${play.about.inning}`;
+
+            let playDescription = play.result.description;
+            
+            let homeScore = play.result.homeScore;
+            let awayScore = play.result.awayScore;
+            let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
+                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
+
+            return `${inningDescription} - ${playDescription} - ${scoreDescription}`;
+        };
+
+        let scoringPlaysValue = scoringPlays.map(mapScoringPlays).join("\n");
+        fields.push({ name: "Scoring Plays", value: scoringPlaysValue });
     }
 
     private addHighlights(fields: APIEmbedField[]) {

@@ -132,6 +132,18 @@ export class GameInfoService {
         return this.gameObject?.liveData?.plays || {};
     }
 
+    getScoringPlays() {
+        let retScoringPlays: any[] = [];
+        let allPlays = (this.getPlays().allPlays as any[])
+        let scoringPlays = (this.getPlays().scoringPlays as number[]);
+        
+        scoringPlays?.forEach(pIndex => {
+            retScoringPlays.push(allPlays?.at(pIndex));
+        });
+
+        return retScoringPlays;
+    }
+
     getLinescore() {
         return this.gameObject?.liveData?.linescore || {};
     }
