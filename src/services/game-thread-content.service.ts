@@ -92,14 +92,11 @@ export class GameThreadContentService {
                 let awayBoxscoreFields: APIEmbedField[] = [];
                 let homeBoxscoreFields: APIEmbedField[] = [];
                 let pitchingFields: APIEmbedField[] = [];
-                let scoreHighlightFields: APIEmbedField[] = [];
+                
 
                 let battingSummary = this.stats.buildLiveBattingStatsSummary();
                 this.addTeamBoxscoreInfo(homeBoxscoreFields, awayBoxscoreFields);
                 this.addLivePitchingStats(pitchingFields);                
-
-                this.addScoringPlays(scoreHighlightFields);
-                this.addHighlights(scoreHighlightFields);
 
                 let scoreSummary = this.stats.buildScoreboardSummary();
                 let scoreboardEmbed = getBaseEmbed().setDescription(scoreSummary);
@@ -115,9 +112,16 @@ export class GameThreadContentService {
 
                 let pitchingEmbed = getBaseEmbed().setTitle("Pitching").addFields(pitchingFields);
                 let boxscoreInfoEmbed = getBaseEmbed().setTitle("Game Info").setDescription(this.getGameBoxscoreInfo());
-                let scoreHighlightsEmbed = getBaseEmbed().addFields(scoreHighlightFields);
+                embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
 
-                embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed, scoreHighlightsEmbed);
+                // Add scoring plays & highlights (if they exist)
+                let scoreHighlightFields: APIEmbedField[] = [];
+                this.addScoringPlays(scoreHighlightFields);
+                this.addHighlights(scoreHighlightFields);
+                if( scoreHighlightFields.length > 0 ) {
+                    let scoreHighlightsEmbed = getBaseEmbed().setTitle("Scoring Plays & Highlights").addFields(scoreHighlightFields);
+                    embeds.push(scoreHighlightsEmbed);   
+                }             
             }
 
         } catch(e) {
