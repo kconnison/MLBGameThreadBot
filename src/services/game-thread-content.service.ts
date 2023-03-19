@@ -106,12 +106,12 @@ export class GameThreadContentService {
                 let scoreboardEmbed = getBaseEmbed().setDescription(scoreSummary);
 
                 let awayBattingEmbed = getBaseEmbed()
-                    .setTitle(awayTeam.teamName || "")
+                    .setAuthor({ name: awayTeam.name || "", iconURL: content.icon.getTeamIcon(awayTeamId, 100) })
                     .setDescription(battingSummary.away)
                     .setColor(content.colors.getTeamColor(awayTeamId))
                     .addFields(awayBoxscoreFields);
                 let homeBattingEmbed = getBaseEmbed()
-                    .setTitle(homeTeam.teamName || "")
+                    .setAuthor({ name: homeTeam.name || "", iconURL: content.icon.getTeamIcon(homeTeamId, 100) })
                     .setDescription(battingSummary.home)
                     .setColor(content.colors.getTeamColor(homeTeamId))
                     .addFields(homeBoxscoreFields);
@@ -120,13 +120,7 @@ export class GameThreadContentService {
                 let boxscoreInfoEmbed = getBaseEmbed().setTitle("Game Info").setDescription(this.getGameBoxscoreInfo());
                 embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
 
-                // Add scoring plays & highlights (if they exist)
-                /*let scoringPlays = this.getScoringPlays();
-                if( scoringPlays.length > 0 ) {
-                    let scoringPlaysEmbed = getBaseEmbed().setTitle("Scoring Plays").setDescription(scoringPlays);
-                    embeds.push(scoringPlaysEmbed);   
-                }*/             
-
+                // Add highlights (if they exist)   
                 let highlights = this.getHighlights();
                 if( highlights.length > 0 ) {
                     let highlightsEmbed = getBaseEmbed().setTitle("Highlights").setDescription(highlights);
@@ -232,24 +226,9 @@ export class GameThreadContentService {
             let awayScore = (linescore.teams?.away as any)?.runs;
             let awayTeamName = this.gameInfo.getAwayTeam().teamName;
 
-            let minScore, maxScore, teamName;
-            if(homeScore == awayScore) {
-                minScore = homeScore;
-                maxScore = awayScore;
-                teamName = "";
-
-            } else if( homeScore > awayScore ) {
-                minScore = homeScore;
-                maxScore = awayScore;
-                teamName = homeTeamName;
-
-            } else {
-                minScore = awayScore;
-                maxScore = homeScore;
-                teamName = awayTeamName;
-            }
-
-            description += ` | ${bold("Score:")} ${maxScore}-${minScore} ${teamName}`
+            let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeTeamName}` : 
+                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayTeamName}` : `${homeScore}-${awayScore}`));
+            description += ` | ${bold("Score:")} ${scoreDescription}`;
         }
 
         return description;
@@ -362,30 +341,6 @@ export class GameThreadContentService {
         }).map(info => {
             return `${bold(info.label || "")}: ${info.value}`;
         }).join("\n");
-    }
-
-    private getScoringPlays() {
-        let scoringPlays = this.gameInfo.getScoringPlays();
-        if( scoringPlays.length > 0 ) {
-            let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
-            let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
-            const mapScoringPlays = (play: any) => {
-                let halfInning: string = play.about.halfInning;          
-                let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)} ${play.about.inning}`;
-    
-                let playDescription = play.result.description;
-                
-                let homeScore = play.result.homeScore;
-                let awayScore = play.result.awayScore;
-                let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
-                    (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
-    
-                return `${inningDescription} - ${playDescription} - ${scoreDescription}`;
-            };
-    
-            return scoringPlays.map(mapScoringPlays).join("\n");
-        }
-        return "";
     }
 
     private getHighlights() {

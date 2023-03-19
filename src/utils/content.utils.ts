@@ -38,13 +38,13 @@ export namespace content {
     export namespace colors {
         export function getTeamColor(id: number) {     
             if( !TEAM_COLORS_MAP.has(id) ) id = 0;
-            return TEAM_COLORS_MAP.get(id) || 0xD3D3D3;
+            return TEAM_COLORS_MAP.get(id) || 0x808080;
         }
     }
 }
 
 const TEAM_COLORS_MAP = new Map([
-    [0, 0xD3D3D3], // Default
+    [0, 0x808080], // Default
     [108, 0xBA0021], // LAA
     [109, 0xA71930], // AZ
     [110, 0xDF4601], // BAL
