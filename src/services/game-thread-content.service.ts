@@ -1,5 +1,5 @@
 import { bold, EmbedBuilder, hyperlink } from "@discordjs/builders";
-import { APIEmbedField } from "discord.js";
+import { APIEmbedField, time } from "discord.js";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
 import { GameBroadcastFeeds, GameInfoService } from "./game-info.service";
@@ -69,7 +69,7 @@ export class GameThreadContentService {
                 .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
                 .setDescription(this.getSummaryEmbedDescription())
                 .addFields(summaryFields)
-                .setTimestamp();
+                .addFields({ name: "Last Updated:", value: time() })
             embeds.push(summaryEmbed);
 
             this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().abstractGameState}`);
