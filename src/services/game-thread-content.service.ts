@@ -155,13 +155,14 @@ export class GameThreadContentService {
                         if(event?.details && event?.details?.eventType) {
                             let eventType: string = event.details.eventType;
                             if ( eventType.includes("_substitution") || eventType.includes("stolen_base") || eventType.includes("caught_stealing") ) {
-                                playEmbeds.push(createEmbed(event.player.id, event.details.description));
+                                let playDescription = event.details.description.replace(/(.*:\s)/, (match: any) => bold(match));
+                                playEmbeds.push(createEmbed(event.player.id, playDescription));
                             }
                         }
                     });
     
                     // Then create embed for the actual play itself
-                    let playDescription = `${bold(play.result.event)}: ${play.result.description}`;
+                    let playDescription = `${bold(play.result.event+":")} ${play.result.description}`;
                     playEmbeds.push(createEmbed(play.matchup.batter.id, playDescription));
 
                     embeds.push(playEmbeds);
