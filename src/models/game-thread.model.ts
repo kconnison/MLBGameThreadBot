@@ -45,7 +45,7 @@ export class GameThread {
      */
     private createDiscordThreads() {
         let title = this.content.getThreadTitle();
-        let embeds = this.content.getEmbeds();
+        let embeds = this.content.getGameInfoEmbeds();
 
         this.discord.createThreads(title, embeds).then((pThreadRefs) => {
             Promise.all(pThreadRefs).then(threadRefs => {
@@ -63,8 +63,8 @@ export class GameThread {
             this.logger.debug("Updating thread content...");
 
             return this.gameInfo.update(timecode).then(() => {
-                let embeds = this.content.getEmbeds();
-                this.discord.editThreads(this.discordThreadRefs, embeds);
+                this.discord.editThreads(this.discordThreadRefs, this.content.getGameInfoEmbeds());
+                this.discord.postMessages(this.discordThreadRefs, this.content.getPlayByPlayEmbeds());
             });
         }; 
 

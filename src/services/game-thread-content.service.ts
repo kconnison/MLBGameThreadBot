@@ -46,7 +46,7 @@ export class GameThreadContentService {
         return title;
     }
 
-    public getEmbeds() {
+    public getGameInfoEmbeds() {
         let embeds: EmbedBuilder[] = [];
         try {
             let gamePk = this.gameInfo.gamePk;
@@ -132,7 +132,7 @@ export class GameThreadContentService {
         return embeds;
     }
 
-    public getPlayByPlayMessageEmbeds() {
+    public getPlayByPlayEmbeds() {
         let embeds: EmbedBuilder[][] = [];
         try {
             const createEmbed = (playerId: number, description: string) => {

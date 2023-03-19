@@ -103,7 +103,7 @@ export class DiscordService {
                     this.logger.debug(`[THREAD_${thread.id}] Starting message found, editing...`);
                     msg.edit({
                         embeds: embeds
-                    }).then((msg) => {
+                    }).then(() => {
                         this.logger.debug(`[THREAD_${thread.id}] ...starting message edited successfully!`);
 
                     }).catch(err => {
@@ -113,6 +113,19 @@ export class DiscordService {
                 } else {
                     this.logger.warn(`[THREAD_${thread.id}] Starting message not found!`);
                 }
+            });
+        });
+    }
+
+
+    public postMessages(threadRefs: ThreadChannel[], messageEmbeds: EmbedBuilder[][]) {
+        threadRefs.forEach(thread => {
+            messageEmbeds.forEach(async embeds => {
+                await thread.send({
+                    embeds: embeds
+                }).catch(error => {
+                    this.logger.error(error);
+                });
             });
         });
     }
