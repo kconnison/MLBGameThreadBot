@@ -90,8 +90,13 @@ export class DiscordService {
                         embeds: embeds
                     }
                 }).then(thread => {
+                    this.logger.debug(`THREAD_${thread.id} created successfully, pinning starter message...`);
                     thread.fetchStarterMessage().then(msg => {
-                        msg?.pin();
+                        msg?.pin().then(msg => {
+                            this.logger.debug(`MSG_${msg.id} pinned successfully!`);
+                        }).catch(error => {
+                            this.logger.error(error);
+                        });
                     });
                     return thread;
                 });
@@ -126,11 +131,14 @@ export class DiscordService {
 
     public postMessages(threadRefs: ThreadChannel[], messages: PlayByPlayMessage[]) {
         threadRefs.forEach(thread => {
+            this.logger.debug(`[THREAD_${thread.id}] Posting play-by-play messages...`)
             messages.forEach(async pbpMsg => {
                 await thread.send({
                     embeds: pbpMsg.embeds
                 }).then(msg => {
+                    this.logger.debug(`MSG_${msg.id} created successfully!`);
                     if( pbpMsg.isScoringPlay ) {
+                        this.logger.debug(`MSG_${msg.id} contains a scoring play, pinning...`);
                         msg.pin();
                     }
                 }).catch(error => {
