@@ -117,13 +117,17 @@ export class GameThreadContentService {
                 embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
 
                 // Add scoring plays & highlights (if they exist)
-                let scoreHighlightFields: APIEmbedField[] = [];
-                this.addScoringPlays(scoreHighlightFields);
-                this.addHighlights(scoreHighlightFields);
-                if( scoreHighlightFields.length > 0 ) {
-                    let scoreHighlightsEmbed = getBaseEmbed().setTitle("Scoring Plays & Highlights").addFields(scoreHighlightFields);
-                    embeds.push(scoreHighlightsEmbed);   
+                let scoringPlays = this.getScoringPlays();
+                if( scoringPlays.length > 0 ) {
+                    let scoringPlaysEmbed = getBaseEmbed().setTitle("Scoring Plays").setDescription(scoringPlays);
+                    embeds.push(scoringPlaysEmbed);   
                 }             
+
+                let highlights = this.getHighlights();
+                if( highlights.length > 0 ) {
+                    let highlightsEmbed = getBaseEmbed().setTitle("Highlights").setDescription(highlights);
+                    embeds.push(highlightsEmbed);  
+                }
             }
 
         } catch(e) {
@@ -338,7 +342,7 @@ export class GameThreadContentService {
         }).join("\n");
     }
 
-    private addScoringPlays(fields: APIEmbedField[]) {
+    private getScoringPlays() {
         let scoringPlays = this.gameInfo.getScoringPlays();
         if( scoringPlays.length > 0 ) {
             let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
@@ -357,12 +361,12 @@ export class GameThreadContentService {
                 return `${inningDescription} - ${playDescription} - ${scoreDescription}`;
             };
     
-            let scoringPlaysValue = scoringPlays.map(mapScoringPlays).join("\n");
-            fields.push({ name: "Scoring Plays", value: scoringPlaysValue });
+            return scoringPlays.map(mapScoringPlays).join("\n");
         }
+        return "";
     }
 
-    private addHighlights(fields: APIEmbedField[]) {
+    private getHighlights() {
         let highlights = this.gameInfo.getHighlights();
         if( highlights.length > 0 ) {
             const mapHighlights = (highlight: any) => {
@@ -371,9 +375,9 @@ export class GameThreadContentService {
                 return hyperlink(linkTitle, url);
             };
 
-            let highlightsValue = highlights.map(mapHighlights).join("\n");
-            fields.push({ name: "Highlights", value: highlightsValue });
+            return highlights.map(mapHighlights).join("\n");
         }
+        return "";
     }
 
     private addSpacer(fields: APIEmbedField[]) {
