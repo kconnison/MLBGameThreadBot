@@ -137,8 +137,8 @@ export class GameThreadContentService {
         return embeds;
     }
 
-    public getPlayByPlayEmbeds() {
-        let embeds: EmbedBuilder[][] = [];
+    public getPlayByPlayMessages() {
+        let messages: PlayByPlayMessage[] = [];
         try {
             const createEmbed = (playerId: number, description: string) => {
                 let playerInfo = this.gameInfo.getPlayerInfo(playerId);
@@ -184,7 +184,7 @@ export class GameThreadContentService {
                     }
 
                     playEmbeds.push(createEmbed(play.matchup.batter.id, playDescription));
-                    embeds.push(playEmbeds);
+                    messages.push({ isScoringPlay: play.about.isScoringPlay, embeds: playEmbeds });
                     this.lastLoggedAB = play.atBatIndex;
                 }
             });
@@ -192,7 +192,7 @@ export class GameThreadContentService {
         } catch(e) {
             this.logger.error(e);
         }
-        return embeds;
+        return messages;
     }
 
     private getSummaryEmbedTitle() {
@@ -410,4 +410,9 @@ export class GameThreadContentService {
         }      
         return n + ord;
     }
+}
+
+export interface PlayByPlayMessage {
+    isScoringPlay: boolean; 
+    embeds: EmbedBuilder[];
 }

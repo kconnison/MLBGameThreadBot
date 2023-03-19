@@ -1,4 +1,5 @@
 import { ChannelType, Client, Collection, EmbedBuilder, Events, ForumChannel, GatewayIntentBits, PermissionsBitField, SortOrderType, ThreadAutoArchiveDuration, ThreadChannel } from "discord.js";
+import { PlayByPlayMessage } from "./game-thread-content.service";
 import { LoggerService } from "./logger.service";
 
 const GAME_THREAD_CHANNEL_NAME = "mlb-game-threads";
@@ -123,11 +124,15 @@ export class DiscordService {
     }
 
 
-    public postMessages(threadRefs: ThreadChannel[], messageEmbeds: EmbedBuilder[][]) {
+    public postMessages(threadRefs: ThreadChannel[], messages: PlayByPlayMessage[]) {
         threadRefs.forEach(thread => {
-            messageEmbeds.forEach(async embeds => {
+            messages.forEach(async pbpMsg => {
                 await thread.send({
-                    embeds: embeds
+                    embeds: pbpMsg.embeds
+                }).then(msg => {
+                    if( pbpMsg.isScoringPlay ) {
+                        msg.pin();
+                    }
                 }).catch(error => {
                     this.logger.error(error);
                 });

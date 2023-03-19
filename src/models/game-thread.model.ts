@@ -64,7 +64,7 @@ export class GameThread {
 
             return this.gameInfo.update(timecode).then(() => {
                 this.discord.editThreads(this.discordThreadRefs, this.content.getGameInfoEmbeds());
-                this.discord.postMessages(this.discordThreadRefs, this.content.getPlayByPlayEmbeds());
+                this.discord.postMessages(this.discordThreadRefs, this.content.getPlayByPlayMessages());
             });
         }; 
 
