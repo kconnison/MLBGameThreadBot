@@ -68,7 +68,8 @@ export class GameThreadContentService {
                 .setURL(content.link.getMLBGameDayLink(gamePk))
                 .setThumbnail(content.icon.getMatchupIcon(homeTeamId, awayTeamId, 100))
                 .setDescription(this.getSummaryEmbedDescription())
-                .addFields(summaryFields);
+                .addFields(summaryFields)
+                .setTimestamp();
             embeds.push(summaryEmbed);
 
             this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().abstractGameState}`);
@@ -117,11 +118,11 @@ export class GameThreadContentService {
                 embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
 
                 // Add scoring plays & highlights (if they exist)
-                let scoringPlays = this.getScoringPlays();
+                /*let scoringPlays = this.getScoringPlays();
                 if( scoringPlays.length > 0 ) {
                     let scoringPlaysEmbed = getBaseEmbed().setTitle("Scoring Plays").setDescription(scoringPlays);
                     embeds.push(scoringPlaysEmbed);   
-                }             
+                }*/             
 
                 let highlights = this.getHighlights();
                 if( highlights.length > 0 ) {
@@ -166,9 +167,23 @@ export class GameThreadContentService {
                     });
     
                     // Then create embed for the actual play itself
-                    let playDescription = `${bold(play.result.event+":")} ${play.result.description}`;
-                    playEmbeds.push(createEmbed(play.matchup.batter.id, playDescription));
+                    let halfInning: string = play.about.halfInning;          
+                    let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)}  ${this.getInningOrdinal(play.about.inning)},`
+                        + ` ${play.count.outs} Out(s)`;
+                    let playDescription = `${inningDescription}\n\n${bold(play.result.event+":")} ${play.result.description}`;
+                    if( play.about.isScoringPlay ) {
+                        let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
+                        let homeScore = play.result.homeScore;                        
+                        let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
+                        let awayScore = play.result.awayScore;
 
+                        let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
+                        (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
+
+                        playDescription += `\n\n${scoreDescription}`;
+                    }
+
+                    playEmbeds.push(createEmbed(play.matchup.batter.id, playDescription));
                     embeds.push(playEmbeds);
                     this.lastLoggedAB = play.atBatIndex;
                 }
@@ -370,7 +385,7 @@ export class GameThreadContentService {
         let highlights = this.gameInfo.getHighlights();
         if( highlights.length > 0 ) {
             const mapHighlights = (highlight: any) => {
-                let url = highlight.playbacks[0].url;
+                let url = content.link.getHighlightVideoLink(highlight.slug);
                 let linkTitle = `${highlight.title} (${highlight.duration})`;
                 return hyperlink(linkTitle, url);
             };
@@ -382,5 +397,17 @@ export class GameThreadContentService {
 
     private addSpacer(fields: APIEmbedField[]) {
         fields.push({ name: '\u200B', value: '\u200B' });
+    }
+
+    private getInningOrdinal(n: number) {
+        let ord = 'th';
+        if (n % 10 == 1 && n % 100 != 11) {
+          ord = 'st';
+        } else if (n % 10 == 2 && n % 100 != 12) {
+          ord = 'nd';
+        } else if (n % 10 == 3 && n % 100 != 13) {
+          ord = 'rd';
+        }      
+        return n + ord;
     }
 }

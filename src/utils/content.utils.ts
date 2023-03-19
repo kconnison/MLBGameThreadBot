@@ -29,5 +29,9 @@ export namespace content {
         export function getPlayerProfileLink(playerId: number) {
             return `https://www.mlb.com/player/${playerId}`;
         }
+
+        export function getHighlightVideoLink(slug: string) {
+            return `https://www.mlb.com/video/${slug}`;
+        }
     }
 }
