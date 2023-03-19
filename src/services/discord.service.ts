@@ -88,6 +88,11 @@ export class DiscordService {
                     message: {
                         embeds: embeds
                     }
+                }).then(thread => {
+                    thread.fetchStarterMessage().then(msg => {
+                        msg?.pin();
+                    });
+                    return thread;
                 });
             });
         });
