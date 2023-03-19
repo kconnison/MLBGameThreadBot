@@ -25,5 +25,9 @@ export namespace content {
         export function getMLBGameDayLink(gamePk: number) {
             return `https://www.mlb.com/gameday/${gamePk}/`;
         }
+
+        export function getPlayerProfileLink(playerId: number) {
+            return `https://www.mlb.com/player/${playerId}`;
+        }
     }
 }

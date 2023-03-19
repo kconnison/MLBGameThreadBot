@@ -10,6 +10,8 @@ export class GameThreadContentService {
     private logger: LoggerService;
     private stats: GameThreadStatsService;
 
+    private lastLoggedAB: number = -1;
+
     constructor(private gameInfo: GameInfoService) {
         this.logger = new LoggerService(GameThreadContentService.name);
 
@@ -45,7 +47,7 @@ export class GameThreadContentService {
     }
 
     public getEmbeds() {
-        let embeds = [];
+        let embeds: EmbedBuilder[] = [];
         try {
             let gamePk = this.gameInfo.gamePk;
             let homeTeam = this.gameInfo.getHomeTeam();
@@ -54,7 +56,7 @@ export class GameThreadContentService {
             let awayTeamId = awayTeam.id || 0;
 
             const getBaseEmbed = () => {
-                return new EmbedBuilder().setColor(0x72767D);
+                return new EmbedBuilder();
             };
 
             let summaryFields: APIEmbedField[] = [];
@@ -123,6 +125,49 @@ export class GameThreadContentService {
                     embeds.push(scoreHighlightsEmbed);   
                 }             
             }
+
+        } catch(e) {
+            this.logger.error(e);
+        }
+        return embeds;
+    }
+
+    public getPlayByPlayMessageEmbeds() {
+        let embeds: EmbedBuilder[][] = [];
+        try {
+            const createEmbed = (playerId: number, description: string) => {
+                let playerInfo = this.gameInfo.getPlayerInfo(playerId);
+                return new EmbedBuilder().setAuthor({ 
+                    name: playerInfo?.getProfile().fullName || "", 
+                    iconURL: content.icon.getPlayerIcon(playerId, 100), 
+                    url: content.link.getPlayerProfileLink(playerId)
+                }).setDescription(description);
+            };
+
+            let plays = this.gameInfo.getAllPlays().filter((p) => { return p.atBatIndex > this.lastLoggedAB; });
+            plays.forEach((play) => {
+                // Only log the play if it is complete
+                if( play?.about?.isComplete ) {
+                    let playEmbeds = [];
+                
+                    // First check playEvents for substitutions, stolen bases, caught stealing, etc.
+                    (play.playEvents || []).forEach((event: any) => {
+                        if(event?.details && event?.details?.eventType) {
+                            let eventType: string = event.details.eventType;
+                            if ( eventType.includes("_substitution") || eventType.includes("stolen_base") || eventType.includes("caught_stealing") ) {
+                                playEmbeds.push(createEmbed(event.player.id, event.details.description));
+                            }
+                        }
+                    });
+    
+                    // Then create embed for the actual play itself
+                    let playDescription = `${bold(play.result.event)}: ${play.result.description}`;
+                    playEmbeds.push(createEmbed(play.matchup.batter.id, playDescription));
+
+                    embeds.push(playEmbeds);
+                    this.lastLoggedAB = play.atBatIndex;
+                }
+            });
 
         } catch(e) {
             this.logger.error(e);

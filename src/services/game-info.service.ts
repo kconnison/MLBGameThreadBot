@@ -128,8 +128,12 @@ export class GameInfoService {
         return this.batterStats.away.get(id);
     }
 
-    public getPlays() {
+    private getPlays() {
         return this.gameObject?.liveData?.plays || {};
+    }
+
+    public getAllPlays() {
+        return (this.getPlays().allPlays || [] as any[]);
     }
 
     public getScoringPlays() {
