@@ -56,7 +56,8 @@ export class GameThreadContentService {
             let awayTeamId = awayTeam.id || 0;
 
             const getBaseEmbed = () => {
-                return new EmbedBuilder();
+                let baseColor = content.colors.getTeamColor(0);
+                return new EmbedBuilder().setColor(baseColor);
             };
 
             let summaryFields: APIEmbedField[] = [];
@@ -107,10 +108,12 @@ export class GameThreadContentService {
                 let awayBattingEmbed = getBaseEmbed()
                     .setTitle(awayTeam.teamName || "")
                     .setDescription(battingSummary.away)
+                    .setColor(content.colors.getTeamColor(awayTeamId))
                     .addFields(awayBoxscoreFields);
                 let homeBattingEmbed = getBaseEmbed()
                     .setTitle(homeTeam.teamName || "")
                     .setDescription(battingSummary.home)
+                    .setColor(content.colors.getTeamColor(homeTeamId))
                     .addFields(homeBoxscoreFields);
 
                 let pitchingEmbed = getBaseEmbed().setTitle("Pitching").addFields(pitchingFields);
@@ -142,11 +145,15 @@ export class GameThreadContentService {
         try {
             const createEmbed = (playerId: number, description: string) => {
                 let playerInfo = this.gameInfo.getPlayerInfo(playerId);
-                return new EmbedBuilder().setAuthor({ 
-                    name: playerInfo?.getProfile().fullName || "", 
-                    iconURL: content.icon.getPlayerIcon(playerId, 100), 
-                    url: content.link.getPlayerProfileLink(playerId)
-                }).setDescription(description);
+                let teamId = playerInfo?.getBoxscore().parentTeamId || 0;
+                return new EmbedBuilder()
+                    .setColor(content.colors.getTeamColor(teamId))
+                    .setAuthor({ 
+                        name: playerInfo?.getProfile().fullName || "", 
+                        iconURL: content.icon.getPlayerIcon(playerId, 100), 
+                        url: content.link.getPlayerProfileLink(playerId)
+                    })
+                    .setDescription(description);
             };
 
             let plays = this.gameInfo.getAllPlays().filter((p) => { return p.atBatIndex > this.lastLoggedAB; });
