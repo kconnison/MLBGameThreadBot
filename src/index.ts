@@ -1,9 +1,9 @@
 import cron from "node-schedule";
-import MLBStatsAPI from "mlb-stats-typescript-api/output";
 import { LoggerService } from "./services/logger.service";
 import { date } from "./utils/date.utils";
 import { GameThread } from "./models/game-thread.model";
 import { DiscordService } from "./services/discord.service";
+import { mlb } from "./services/mlb-stats.api";
 
 const logger = new LoggerService("MLBGameThreadBot");
 logger.debug("Initializing...");
@@ -47,7 +47,7 @@ async function initializeGameThreads(scheduleDate: Date = new Date()) {
     logger.debug(`Initializing game threads, schedule date is ${scheduleDate} ...`);
     
     let schedOpts = (TEAM_ID? { teamId: TEAM_ID, date: date.format.toMM_DD_YYYY(scheduleDate) } : {});
-    let gamePks = (await MLBStatsAPI.ScheduleService.schedule(1, [], schedOpts)).dates?.at(0)?.games?.map(gm => { return gm.gamePk; }) || [];
+    let gamePks = (await mlb.schedule.getSchedule([], schedOpts)).dates?.at(0)?.games?.map(gm => { return gm.gamePk; }) || [];
     logger.debug(`${gamePks.length} game(s) scheduled today!`, gamePks);
 
     gamePks.forEach(async gamePk => {

@@ -1,4 +1,4 @@
-import MLBStatsAPI from "mlb-stats-typescript-api/output";
+import { mlb } from "./mlb-stats.api";
 import { BoxscorePlayer } from "../models/api/boxscore.model";
 import { BroadcastRestObject, GameBroadcastInfo } from "../models/api/game-broadcast.model";
 import { GameContentRestObject } from "../models/api/game-content.model";
@@ -29,9 +29,9 @@ export class GameInfoService {
     public async load(gamePk: number, timecode?: string) {
         this.logger.debug(`Loading game info for gamePk: ${gamePk} ...`);
 
-        let pSchedule = MLBStatsAPI.ScheduleService.schedule(1, [gamePk], { hydrate: "broadcasts" });
-        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk, (timecode? { timecode } : {}));
-        let pGameContent = MLBStatsAPI.GameService.content(gamePk);
+        let pSchedule = mlb.schedule.getSchedule([gamePk], { hydrate: "broadcasts" });
+        let pGameInfo = mlb.game.getLiveGameV1(gamePk, (timecode? { timecode } : {}));
+        let pGameContent = mlb.game.getContent(gamePk);
 
         let schedule, gameInfo, gameContent;
         [schedule, gameInfo, gameContent] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
@@ -50,8 +50,8 @@ export class GameInfoService {
     public async update(timecode?: string) {
         let gamePk = this.gamePk;
 
-        let pGameInfo = MLBStatsAPI.GameService.liveGameV1(gamePk, (timecode? { timecode } : {}));
-        let pGameContent = MLBStatsAPI.GameService.content(gamePk);
+        let pGameInfo = mlb.game.getLiveGameV1(gamePk, (timecode? { timecode } : {}));
+        let pGameContent = mlb.game.getContent(gamePk);
         [this.gameObject, this.gameContentObject] = await Promise.all([pGameInfo, pGameContent]);
 
         //call this again here in case lineups were not available on first load
@@ -266,19 +266,14 @@ export class GameInfoService {
      * @returns 
      */
     private async loadBatterStatsVsProbPitcher(batterIds: number[], pitcherId: number) {
-        // Using direct URL since MLBStatsAPI does not currently have a method for this
-        let personIds = batterIds.join(",");
-        let hydration = `stats(group=[hitting],type=[vsPlayer],opposingPlayerId=${pitcherId},sportId=1)`;
-        let url = `https://statsapi.mlb.com/api/v1/people/?personIds=${personIds}&hydrate=${hydration}`;
-
-        this.logger.debug("Fetching batter stats vs pitcher: ", url);
+        this.logger.debug(`Fetching batter stats (${batterIds}) vs pitcher (${pitcherId})...`);
 
         let stats = new Map<number, any>();
-        return fetch(url).then(response => response.json()).then((response) => {
-            (response?.people || []).forEach((p: any) => {
-                let vsPlayerTotal = (p?.stats || []).find((s: any) => { return s?.type?.displayName == "vsPlayerTotal"; });
+        return mlb.people.getPersonStatsAgainst(batterIds, pitcherId).then((response) => {
+            (response?.people || []).forEach((p) => {
+                let vsPlayerTotal = (p?.stats || []).find((s) => { return s?.type?.displayName == "vsPlayerTotal"; });
                 let hittingStats = (vsPlayerTotal?.splits?.at(0)?.stat || {});
-                stats.set(p.id, hittingStats);
+                stats.set(p.id || 0, hittingStats);
             });
             return stats;
 
