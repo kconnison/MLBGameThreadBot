@@ -1,0 +1,340 @@
+import { IdNameLinkRestObject } from "./game.model";
+
+export declare type BoxscoreRestObject = {
+    copyright?: string;
+    teams?: {
+        away?: BoxscoreTeamRestObject;
+        home?: BoxscoreTeamRestObject;
+    };
+    officials?: Array<BoxscoreOfficial>;
+    info?: Array<{
+        label?: string;
+        value?: string;
+    }>;
+    pitchingNotes?: string[];
+};
+export declare type BoxscoreTeamRestObject = {
+    team?: {
+        springLeague?: {
+            id?: number;
+            name?: string;
+            link?: string;
+            abbreviation?: string;
+        };
+        allStarStatus?: string;
+        id?: number;
+        name?: string;
+        link?: string;
+        season?: number;
+        venue?: IdNameLinkRestObject;
+        springVenue?: {
+            id?: number;
+            link?: string;
+        };
+        teamCode?: string;
+        fileCode?: string;
+        abbreviation?: string;
+        teamName?: string;
+        locationName?: string;
+        firstYearOfPlay?: string;
+        league?: IdNameLinkRestObject;
+        division?: IdNameLinkRestObject;
+        sport?: IdNameLinkRestObject;
+        shortName?: string;
+        record?: {
+            gamesPlayed?: number;
+            wildCardGamesBack?: string;
+            leagueGamesBack?: string;
+            springLeagueGamesBack?: string;
+            sportGamesBack?: string;
+            divisionGamesBack?: string;
+            conferenceGamesBack?: string;
+            leagueRecord?: {
+                wins?: number;
+                losses?: number;
+                ties?: number;
+                pct?: string;
+            };
+            records?: {};
+            divisionLeader?: boolean;
+            wins?: number;
+            losses?: number;
+            winningPercentage?: string;
+        };
+        franchiseName?: string;
+        clubName?: string;
+        active?: boolean;
+    };
+    teamStats?: {
+        batting?: BoxscoreSeasonBattingStats;
+        pitching?: BoxscoreSeasonPitchingStats;
+        fielding?: BoxscoreSeasonFieldingStats;
+    };
+    players?: Array<BoxscorePlayer>;
+    batters?: Array<number>;
+    pitchers?: Array<number>;
+    bench?: Array<number>;
+    bullpen?: Array<number>;
+    battingOrder?: Array<number>;
+    info?: Array<{
+        title?: string;
+        fieldList?: Array<LabelValuePair>;
+    }>;
+    note?: Array<LabelValuePair>;
+};
+export declare type LabelValuePair = {
+    label?: string;
+    value?: string;
+};
+export declare type BoxscoreOfficial = {
+    official?: IdNameLinkRestObject;
+    officialType?: string;
+};
+export declare type BoxscorePlayer = {
+    person?: IdNameLinkRestObject;
+    jerseyNumber?: string;
+    position?: {
+        code?: string;
+        name?: string;
+        type?: string;
+        abbreviation?: string;
+    };
+    status?: {
+        code?: string;
+        description?: string;
+    };
+    parentTeamId?: number;
+    battingOrder?: string;
+    stats?: {
+        batting?: BoxscoreBattingStats;
+        pitching?: BoxscorePitchingStats;
+        fielding?: BoxscoreFieldingStats;
+    };
+    seasonStats?: {
+        batting?: BoxscoreSeasonBattingStats;
+        pitching?: BoxscoreSeasonPitchingStats;
+        fielding?: BoxscoreSeasonFieldingStats;
+    };
+    gameStatus?: {
+        isCurrentBatter?: boolean;
+        isCurrentPitcher?: boolean;
+        isOnBench?: boolean;
+        isSubstitute?: boolean;
+    };
+    allPositions?: {
+        code?: string;
+        name?: string;
+        type?: string;
+        abbreviation?: string;
+    }[];
+};
+
+export declare type BoxscoreFieldingStats = {
+    gamesStarted?: number;
+    caughtStealing?: number;
+    stolenBases?: number;
+    stolenBasePercentage?: string;
+    assists?: number;
+    putOuts?: number;
+    errors?: number;
+    chances?: number;
+    fielding?: string;
+    passedBall?: number;
+    pickoffs?: number;
+};
+
+export declare type BoxscoreSeasonFieldingStats = {
+    assists?: number;
+    putOuts?: number;
+    errors?: number;
+    chances?: number;
+    fielding?: string;
+    caughtStealing?: number;
+    passedBall?: number;
+    stolenBases?: number;
+    stolenBasePercentage?: string;
+    pickoffs?: number;
+};
+
+export declare type BoxscorePitchingStats = {
+    note?: string;
+    summary?: string;
+    gamesPlayed?: number;
+    gamesStarted?: number;
+    groundOuts?: number;
+    airOuts?: number;
+    runs?: number;
+    doubles?: number;
+    triples?: number;
+    homeRuns?: number;
+    strikeOuts?: number;
+    baseOnBalls?: number;
+    intentionalWalks?: number;
+    hits?: number;
+    hitByPitch?: number;
+    atBats?: number;
+    caughtStealing?: number;
+    stolenBases?: number;
+    stolenBasePercentage?: string;
+    numberOfPitches?: number;
+    inningsPitched?: string;
+    wins?: number;
+    losses?: number;
+    saves?: number;
+    saveOpportunities?: number;
+    holds?: number;
+    blownSaves?: number;
+    earnedRuns?: number;
+    battersFaced?: number;
+    outs?: number;
+    gamesPitched?: number;
+    completeGames?: number;
+    shutouts?: number;
+    pitchesThrown?: number;
+    balls?: number;
+    strikes?: number;
+    strikePercentage?: string;
+    hitBatsmen?: number;
+    balks?: number;
+    wildPitches?: number;
+    pickoffs?: number;
+    rbi?: number;
+    gamesFinished?: number;
+    runsScoredPer9?: string;
+    homeRunsPer9?: string;
+    inheritedRunners?: number;
+    inheritedRunnersScored?: number;
+    catchersInterference?: number;
+    sacBunts?: number;
+    sacFlies?: number;
+    passedBall?: number;
+};
+
+export declare type BoxscoreSeasonPitchingStats = {
+    gamesPlayed?: number;
+    gamesStarted?: number;
+    groundOuts?: number;
+    airOuts?: number;
+    runs?: number;
+    doubles?: number;
+    triples?: number;
+    homeRuns?: number;
+    strikeOuts?: number;
+    baseOnBalls?: number;
+    intentionalWalks?: number;
+    hits?: number;
+    hitByPitch?: number;
+    atBats?: number;
+    obp?: string;
+    caughtStealing?: number;
+    stolenBases?: number;
+    stolenBasePercentage?: string;
+    numberOfPitches?: number;
+    era?: string;
+    inningsPitched?: string;
+    wins?: number;
+    losses?: number;
+    saves?: number;
+    saveOpportunities?: number;
+    holds?: number;
+    blownSaves?: number;
+    earnedRuns?: number;
+    whip?: string;
+    battersFaced?: number;
+    outs?: number;
+    gamesPitched?: number;
+    completeGames?: number;
+    shutouts?: number;
+    pitchesThrown?: number;
+    balls?: number;
+    strikes?: number;
+    strikePercentage?: string;
+    hitBatsmen?: number;
+    balks?: number;
+    wildPitches?: number;
+    pickoffs?: number;
+    groundOutsToAirouts?: string;
+    rbi?: number;
+    winPercentage?: string;
+    pitchesPerInning?: string;
+    gamesFinished?: number;
+    strikeoutWalkRatio?: string;
+    strikeoutsPer9Inn?: string;
+    walksPer9Inn?: string;
+    hitsPer9Inn?: string;
+    runsScoredPer9?: string;
+    homeRunsPer9?: string;
+    inheritedRunners?: number;
+    inheritedRunnersScored?: number;
+    catchersInterference?: number;
+    sacBunts?: number;
+    sacFlies?: number;
+    passedBall?: number;
+};
+
+export declare type BoxscoreBattingStats = {
+    note?: string;
+    summary?: string;
+    gamesPlayed?: number;
+    flyOuts?: number;
+    groundOuts?: number;
+    runs?: number;
+    doubles?: number;
+    triples?: number;
+    homeRuns?: number;
+    strikeOuts?: number;
+    baseOnBalls?: number;
+    intentionalWalks?: number;
+    hits?: number;
+    hitByPitch?: number;
+    atBats?: number;
+    caughtStealing?: number;
+    stolenBases?: number;
+    stolenBasePercentage?: string;
+    groundIntoDoublePlay?: number;
+    groundIntoTriplePlay?: number;
+    plateAppearances?: number;
+    totalBases?: number;
+    rbi?: number;
+    leftOnBase?: number;
+    sacBunts?: number;
+    sacFlies?: number;
+    catchersInterference?: number;
+    pickoffs?: number;
+    atBatsPerHomeRun?: string;
+};
+
+export declare type BoxscoreSeasonBattingStats = {
+    gamesPlayed?: number;
+    flyOuts?: number;
+    groundOuts?: number;
+    runs?: number;
+    doubles?: number;
+    triples?: number;
+    homeRuns?: number;
+    strikeOuts?: number;
+    baseOnBalls?: number;
+    intentionalWalks?: number;
+    hits?: number;
+    hitByPitch?: number;
+    avg?: string;
+    atBats?: number;
+    obp?: string;
+    slg?: string;
+    ops?: string;
+    caughtStealing?: number;
+    stolenBases?: number;
+    stolenBasePercentage?: string;
+    groundIntoDoublePlay?: number;
+    groundIntoTriplePlay?: number;
+    plateAppearances?: number;
+    totalBases?: number;
+    rbi?: number;
+    leftOnBase?: number;
+    sacBunts?: number;
+    sacFlies?: number;
+    babip?: string;
+    catchersInterference?: number;
+    pickoffs?: number;
+    atBatsPerHomeRun?: string;
+};

@@ -1,8 +1,9 @@
 import { bold, EmbedBuilder, hyperlink } from "@discordjs/builders";
 import { APIEmbedField, time } from "discord.js";
+import { GameBroadcastFeeds } from "../models/api/game-broadcast.model";
 import { content } from "../utils/content.utils";
 import { date } from "../utils/date.utils";
-import { GameBroadcastFeeds, GameInfoService } from "./game-info.service";
+import { GameInfoService } from "./game-info.service";
 import { GameThreadStatsService } from "./game-thread-stats.service";
 import { LoggerService } from "./logger.service";
 
@@ -150,7 +151,7 @@ export class GameThreadContentService {
                     .setDescription(description);
             };
 
-            let plays = this.gameInfo.getAllPlays().filter((p) => { return p.atBatIndex > this.lastLoggedAB; });
+            let plays = this.gameInfo.getAllPlays().filter((p) => { return p.atBatIndex && p.atBatIndex > this.lastLoggedAB; });
             plays.forEach((play) => {
                 // Only log the play if it is complete
                 if( play?.about?.isComplete ) {
@@ -168,15 +169,15 @@ export class GameThreadContentService {
                     });
     
                     // Then create embed for the actual play itself
-                    let halfInning: string = play.about.halfInning;          
-                    let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)}  ${this.getInningOrdinal(play.about.inning)},`
-                        + ` ${play.count.outs} Out(s)`;
-                    let playDescription = `${inningDescription}\n\n${bold(play.result.event+":")} ${play.result.description}`;
+                    let halfInning = play.about.halfInning || "";          
+                    let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)}  ${this.getInningOrdinal(play.about?.inning || 0)},`
+                        + ` ${play.count?.outs} Out(s)`;
+                    let playDescription = `${inningDescription}\n\n${bold(play.result?.event+":")} ${play.result?.description}`;
                     if( play.about.isScoringPlay ) {
                         let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
-                        let homeScore = play.result.homeScore;                        
+                        let homeScore = play.result?.homeScore || 0;                        
                         let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
-                        let awayScore = play.result.awayScore;
+                        let awayScore = play.result?.awayScore || 0;
 
                         let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
                         (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
@@ -184,9 +185,9 @@ export class GameThreadContentService {
                         playDescription += `\n\n${scoreDescription}`;
                     }
 
-                    playEmbeds.push(createEmbed(play.matchup.batter.id, playDescription));
-                    messages.push({ isScoringPlay: play.about.isScoringPlay, embeds: playEmbeds });
-                    this.lastLoggedAB = play.atBatIndex;
+                    playEmbeds.push(createEmbed(play.matchup?.batter?.id || 0, playDescription));
+                    messages.push({ isScoringPlay: (play.about.isScoringPlay || false), embeds: playEmbeds });
+                    this.lastLoggedAB = play.atBatIndex || 0;
                 }
             });
 
@@ -215,15 +216,15 @@ export class GameThreadContentService {
 
             // If game is live, include current inning
             if( this.gameInfo.isGameStateLive() ) {      
-                let inningState = (linescore as any).inningState;
-                let inningOrdinal = (linescore as any).currentInningOrdinal;
+                let inningState = linescore.inningState;
+                let inningOrdinal = linescore.currentInningOrdinal;
                 description += ` (${inningState} ${inningOrdinal})`
             }
 
-            let homeScore = (linescore.teams?.home as any)?.runs;
+            let homeScore = linescore.teams?.home?.runs || 0;
             let homeTeamName = this.gameInfo.getHomeTeam().teamName;
 
-            let awayScore = (linescore.teams?.away as any)?.runs;
+            let awayScore = linescore.teams?.away?.runs || 0;
             let awayTeamName = this.gameInfo.getAwayTeam().teamName;
 
             let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeTeamName}` : 
@@ -241,9 +242,9 @@ export class GameThreadContentService {
         // Add Weather Info
         let weather = this.gameInfo.getWeather();
         if( Object.keys(weather).length > 0 ) {
-            let temp = this.gameInfo.getWeather().temp;
-            let condition = this.gameInfo.getWeather().condition;
-            let wind = this.gameInfo.getWeather().wind;
+            let temp = this.gameInfo.getWeather().temp || "";
+            let condition = this.gameInfo.getWeather().condition || "";
+            let wind = this.gameInfo.getWeather().wind || "";
             fields.push({ name: "Weather", value: `${temp}\u00B0 F, ${condition}`, inline: true });
             fields.push({ name: "Wind", value: wind, inline: true });
         }
@@ -257,7 +258,7 @@ export class GameThreadContentService {
         let gameInfo = this.gameInfo.getGameInfo();
         if( Object.keys(gameInfo).length > 0 ) {
             let attendance = gameInfo.attendance;
-            let firstPitch = date.format.toHHMM(new Date(gameInfo.firstPitch));
+            let firstPitch = gameInfo.firstPitch? date.format.toHHMM(new Date(gameInfo.firstPitch)) : "";
 
             let duration = gameInfo.gameDurationMinutes;
             let gameLength = (duration? `${Math.floor(duration / 60)}:${ (duration % 60).toString().padStart(2,"0") }` : "");

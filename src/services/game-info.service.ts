@@ -1,5 +1,9 @@
 import MLBStatsAPI from "mlb-stats-typescript-api/output";
-import { BoxscorePlayer, BroadcastRestObject, GameContentRestObject, GamePlayerRestObject, GameRestObject, ScheduleRestGameObject } from "mlb-stats-typescript-api/output/src";
+import { BoxscorePlayer } from "../models/api/boxscore.model";
+import { BroadcastRestObject, GameBroadcastInfo } from "../models/api/game-broadcast.model";
+import { GameContentRestObject } from "../models/api/game-content.model";
+import { GamePlayerRestObject, GameRestObject } from "../models/api/game.model";
+import { ScheduleRestGameObject } from "../models/api/schedule.model";
 import { PlayerInfo } from "../models/player-info.model";
 import { LoggerService } from "./logger.service";
 
@@ -36,7 +40,7 @@ export class GameInfoService {
         this.gameObject = gameInfo;
         this.gameContentObject = gameContent;
 
-        this.parseBroadcasts((this.scheduleObject as any)?.broadcasts);
+        this.parseBroadcasts(this.scheduleObject?.broadcasts || []);
         this.parsePlayerInfo(gameInfo);
         await this.parsePlayerStatsVsProbPitcher();
 
@@ -103,19 +107,19 @@ export class GameInfoService {
     }
 
     public getWeather() {
-        return (this.gameObject?.gameData?.weather as any) || {};
+        return this.gameObject?.gameData?.weather || {};
     }
 
     public getGameInfo() {
-        return (this.gameObject?.gameData?.gameInfo as any) || {};
+        return this.gameObject?.gameData?.gameInfo || {};
     }
 
     public getProbablePitchers() {
-        let probablePitchers = (this.gameObject?.gameData?.probablePitchers as any) || {};
-        let homePitcherId = probablePitchers.home?.id;
+        let probablePitchers = this.gameObject?.gameData?.probablePitchers || {};
+        let homePitcherId = probablePitchers.home?.id || 0;
         let homePitcher = this.getPlayerInfo(homePitcherId);
 
-        let awayPitcherId = probablePitchers.away?.id;
+        let awayPitcherId = probablePitchers.away?.id || 0;
         let awayPitcher = this.getPlayerInfo(awayPitcherId);        
 
         return { home: homePitcher, away: awayPitcher };
@@ -133,12 +137,12 @@ export class GameInfoService {
     }
 
     public getAllPlays() {
-        return (this.getPlays().allPlays || [] as any[]);
+        return this.getPlays().allPlays || [];
     }
 
     public getScoringPlays() {
         let retScoringPlays: any[] = [];
-        let allPlays = (this.getPlays().allPlays as any[])
+        let allPlays = this.getPlays().allPlays 
         let scoringPlays = (this.getPlays().scoringPlays as number[]);
         
         scoringPlays?.forEach(pIndex => {
@@ -149,7 +153,7 @@ export class GameInfoService {
     }
 
     public getHighlights() {
-        let highlights: any[] = (this.gameContentObject as any)?.highlights?.highlights?.items || [];
+        let highlights: any[] = this.gameContentObject?.highlights?.highlights?.items || [];
         return highlights.sort((a,b) => {
             let aDt = new Date(a.date);
             let bDt = new Date(b.date);
@@ -183,7 +187,7 @@ export class GameInfoService {
             radio: { home: [], away: [], national: [] }
         };
 
-        broadcasts.forEach((broadcast: any) => {
+        broadcasts.forEach((broadcast: BroadcastRestObject) => {
             let isNational = broadcast.isNational;
             let market = (isNational? "national" : broadcast.homeAway);
 
@@ -283,15 +287,4 @@ export class GameInfoService {
             return stats;
         });
     }    
-}
-
-export interface GameBroadcastInfo {
-    tv: GameBroadcastFeeds;
-    radio: GameBroadcastFeeds;
-}
-
-export interface GameBroadcastFeeds {
-    home: BroadcastRestObject[];
-    away: BroadcastRestObject[];
-    national: BroadcastRestObject[];
 }

@@ -1,4 +1,5 @@
-import { BoxscorePlayer, GamePlayerRestObject } from "mlb-stats-typescript-api/output/src";
+import { BoxscorePlayer } from "./api/boxscore.model";
+import { GamePlayerRestObject } from "./api/game.model";
 
 export class PlayerInfo {
     private boxscore: BoxscorePlayer = {};
@@ -25,11 +26,11 @@ export class PlayerInfo {
     }
 
     public getGameBattingSummary() {
-        return (this.getGameStats()?.batting as any)?.summary || "";
+        return this.getGameStats()?.batting?.summary || "";
     }
 
     public getGamePitchingSummary() {
-        return (this.getGameStats()?.pitching as any)?.summary || "";
+        return this.getGameStats()?.pitching?.summary || "";
     }
 
     public getSeasonStats() {

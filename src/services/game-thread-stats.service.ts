@@ -1,5 +1,5 @@
-import { bold, italic, underscore } from "@discordjs/builders";
-import { LabelValuePair } from "mlb-stats-typescript-api/output/src";
+import { bold } from "@discordjs/builders";
+import { LabelValuePair } from "../models/api/boxscore.model";
 import { GameStatsTableColumn, GameStatsTable } from "../models/game-stats-table.model";
 import { PlayerInfo } from "../models/player-info.model";
 import { GameInfoService } from "./game-info.service";
@@ -11,10 +11,10 @@ export class GameThreadStatsService {
         let linescore = this.gameInfo.getLinescore();
 
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let homeScore = (linescore.teams?.home || {} as any);
+        let homeScore = linescore.teams?.home || {};
 
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-        let awayScore = (linescore.teams?.away || {} as any);
+        let awayScore = linescore.teams?.away || {};
         
         return `${bold(awayTeamName)}: ${awayScore.runs} R | ${awayScore.hits} H | ${awayScore.errors} E | ${awayScore.leftOnBase} LOB\n`
             + `${bold(homeTeamName)}: ${homeScore.runs} R | ${homeScore.hits} H | ${homeScore.errors} E | ${homeScore.leftOnBase} LOB`;
@@ -24,10 +24,10 @@ export class GameThreadStatsService {
         let linescore = this.gameInfo.getLinescore();
 
         let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
-        let homeScore = (linescore.teams?.home || {} as any);
+        let homeScore = linescore.teams?.home || {};
 
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
-        let awayScore = (linescore.teams?.away || {} as any);
+        let awayScore = linescore.teams?.away || {};
 
         // Set width of Team Name column
         const teamColWidthBuffer = 5;
@@ -243,7 +243,7 @@ export class GameThreadStatsService {
         let awayBattingNotes = (awayBox?.note || []);
 
         const hasBattingStats = (id: number) => {
-            let stats = (this.gameInfo.getPlayerInfo(id)?.getGameStats()?.batting as any) || {};
+            let stats = this.gameInfo.getPlayerInfo(id)?.getGameStats()?.batting || {};
             return Object.keys(stats).length > 0;
         };
 
@@ -251,12 +251,12 @@ export class GameThreadStatsService {
             let playerInfo = this.gameInfo.getPlayerInfo(id);
             let profile = playerInfo?.getProfile();
             let box = playerInfo?.getBoxscore();
-            let stats = (playerInfo?.getGameStats()?.batting as any) || {};
+            let stats = playerInfo?.getGameStats()?.batting || {};
 
-            let battingOrder = parseInt((box as any).battingOrder || "0");
+            let battingOrder = parseInt(box?.battingOrder || "0");
             let lineupNbr = (battingOrder % 100 == 0)? bold(`${(battingOrder / 100).toString()}) `) : "> ";
 
-            let positions = (box as any).allPositions.map((pos: any) => { return pos.abbreviation; });
+            let positions = box?.allPositions?.map((pos) => { return pos.abbreviation; }) || [];
             let namePos = `${stats.note || ""}${profile?.boxscoreName} - ${positions.join("-")}`;
 
             return `${lineupNbr}${namePos} (${playerInfo?.getGameBattingSummary()})`;
@@ -302,15 +302,15 @@ export class GameThreadStatsService {
             let playerInfo = this.gameInfo.getPlayerInfo(id);
             let profile = playerInfo?.getProfile();
             let box = playerInfo?.getBoxscore();
-            let stats = (playerInfo?.getGameStats()?.batting as any);
+            let stats = playerInfo?.getGameStats()?.batting || {};
             let seasonStats = playerInfo?.getSeasonStats()?.batting;
 
             // Confirm stats exist before building row
             if( Object.keys(stats).length > 0 ) {
-                let battingOrder = parseInt((box as any).battingOrder || "0");
+                let battingOrder = parseInt(box?.battingOrder || "0");
                 let lineupNbr = (battingOrder % 100 == 0)? (battingOrder / 100).toString() : "";
     
-                let positions = (box as any).allPositions.map((pos: any) => { return pos.abbreviation; });
+                let positions = box?.allPositions?.map((pos) => { return pos.abbreviation; }) || [];
                 let namePos = `${stats.note || ""}${profile?.boxscoreName} - ${positions.join("-")}`;
     
                 let ab = stats.atBats;
@@ -332,7 +332,7 @@ export class GameThreadStatsService {
 
         const mapStatsRows = (id: number) => {
             let statRow = buildStatsRow(id);
-            if(statRow.length > 0 && statRow.at(1).length > playerNameColWidth) playerNameColWidth = statRow.at(1).length;
+            if(statRow.length > 0 && (statRow.at(1) as string).length > playerNameColWidth) playerNameColWidth = (statRow.at(1) as string).length;
             return statRow;  
         };       
         
@@ -362,7 +362,7 @@ export class GameThreadStatsService {
         const mapLivePitchingStatsRow = (id: number) => {
             let playerInfo = this.gameInfo.getPlayerInfo(id);
             let profile = playerInfo?.getProfile();
-            let stats = (playerInfo?.getGameStats()?.pitching as any);
+            let stats = playerInfo?.getGameStats()?.pitching;
             return `${profile?.boxscoreName}${stats?.note? ` ${stats.note}` : ""} (${playerInfo?.getGamePitchingSummary()})`;
         };
 
