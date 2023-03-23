@@ -36,7 +36,7 @@ export class GameThread {
 
         this.gameInfo.load(this.gamePk, timecode).then(async () => {
             this.createDiscordThreads();
-            this.scheduleUpdateJob();
+            this.scheduleThreadUpdateJob();
         });
     }
 
@@ -57,8 +57,8 @@ export class GameThread {
     /**
      * Schedules a job to update the Discord thread during the game
      */
-    private scheduleUpdateJob() {
-        let updateJob: cron.Job;
+    private scheduleThreadUpdateJob() {
+        let threadUpdateJob: cron.Job;
         const updateCallback = (timecode?: string) => {
             this.logger.debug("Updating thread content...");
 
@@ -72,12 +72,12 @@ export class GameThread {
         // with a list of timecodes to use for updates
         if( this.isDevMode ) {
             let UPDATE_TIMECODES = (process.env.DEV_TS_UPDATE || "").split(",");
-            updateJob = cron.scheduleJob({second: new Range(0, 59, 20)}, async() => {
+            threadUpdateJob = cron.scheduleJob({second: new Range(0, 59, 20)}, async() => {
                 if( UPDATE_TIMECODES.length > 0 ) {
                     let timecode = UPDATE_TIMECODES.shift();
                     await updateCallback(timecode);
                 } else {
-                    updateJob.cancel();
+                    threadUpdateJob.cancel();
                 }
             });
 
@@ -92,13 +92,18 @@ export class GameThread {
             schedule.minute = new Range(0, 59, UPDATE_INTERVAL_CONFIG?.preview);
 
             this.logger.debug(`Scheduling job to check for updates every ${UPDATE_INTERVAL_CONFIG?.preview} minutes...`);
-            updateJob = cron.scheduleJob(schedule, async() => {
+            threadUpdateJob = cron.scheduleJob(schedule, async() => {
                 await updateCallback();
-                if( this.gameInfo.isGameStateLive() && hasSetLiveSchedule ) {
+                if( this.gameInfo.isGameStateLive() && !hasSetLiveSchedule ) {
                     this.logger.debug(`Game is in Live state, rescheduling job to check for updates every ${UPDATE_INTERVAL_CONFIG?.live} minutes...`);
                     schedule.minute = new Range(0, 59, UPDATE_INTERVAL_CONFIG.live);
-                    hasSetLiveSchedule = updateJob.reschedule(schedule);
+                    hasSetLiveSchedule = threadUpdateJob.reschedule(schedule);
                     this.logger.debug(`Updated to Live schedule: ${hasSetLiveSchedule}`);
+                    
+                } else if( this.gameInfo.isGameStateFinal() ) {
+                    this.logger.debug(`Game has ended, cancelling job...`);
+                    let hasCancelled = threadUpdateJob.cancel();
+                    this.logger.debug(`Job cancelled successfully: ${hasCancelled}`);
                 }
             });
         }
