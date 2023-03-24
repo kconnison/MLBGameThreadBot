@@ -160,8 +160,8 @@ export class GameThreadStatsService {
             return row;
         };
 
-        homeLineup = homeBattingOrder.map(mapStartingLineupRows).join("\n");
-        awayLineup = awayBattingOrder.map(mapStartingLineupRows).join("\n");
+        homeLineup = (homeBattingOrder.length > 0? homeBattingOrder.map(mapStartingLineupRows).join("\n") : "TBD");
+        awayLineup = (awayBattingOrder.length > 0? awayBattingOrder.map(mapStartingLineupRows).join("\n") : "TBD");
 
         return { home: homeLineup, away: awayLineup };
     }

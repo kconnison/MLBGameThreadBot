@@ -301,12 +301,11 @@ export class GameThreadContentService {
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
 
         let probablePitchers = this.gameInfo.getProbablePitchers();
-
         let lineups = this.stats.buildStartingLineupSummary();
 
-        fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || ""}`, value: lineups.away });
+        fields.push({ name: `${awayTeamName} Lineup vs ${probablePitchers.home?.getProfile().boxscoreName || "TBD"}`, value: lineups.away });
         this.addSpacer(fields);
-        fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || ""}`, value: lineups.home });        
+        fields.push({ name: `${homeTeamName} Lineup vs ${probablePitchers.away?.getProfile().boxscoreName || "TBD"}`, value: lineups.home });        
     }
 
 
