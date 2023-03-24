@@ -84,7 +84,7 @@ export class GameThread {
         // Otherwise start a job to check for updates per the Preview config
         // Once game is live, reschedule the job per the Live config
         } else {
-            const DEFAULT_UPDATE_CONFIG = JSON.stringify({ preview: 10, live: 2 });
+            const DEFAULT_UPDATE_CONFIG = JSON.stringify({ preview: 15, live: 2 });
             const UPDATE_INTERVAL_CONFIG = JSON.parse(process.env.GAME_UPDATE_INTERVAL || DEFAULT_UPDATE_CONFIG);
             let hasSetLiveSchedule = false;            
 
