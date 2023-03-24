@@ -169,10 +169,7 @@ export class GameThreadContentService {
                     });
     
                     // Then create embed for the actual play itself
-                    let halfInning = play.about.halfInning || "";          
-                    let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)}  ${this.getInningOrdinal(play.about?.inning || 0)},`
-                        + ` ${play.count?.outs} Out(s)`;
-                    let playDescription = `${inningDescription}\n\n${bold(play.result?.event+":")} ${play.result?.description}`;
+                    let playDescription = `${bold(play.result?.event+":")} ${play.result?.description}\n\n`;
                     if( play.about.isScoringPlay ) {
                         let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
                         let homeScore = play.result?.homeScore || 0;                        
@@ -182,8 +179,13 @@ export class GameThreadContentService {
                         let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
                         (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
 
-                        playDescription += `\n\n${scoreDescription}`;
+                        playDescription += `${scoreDescription} | `;
                     }
+
+                    let halfInning = play.about.halfInning || "";          
+                    let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)}  ${this.getInningOrdinal(play.about?.inning || 0)},`
+                        + ` ${play.count?.outs} Out(s)`;
+                    playDescription += `${inningDescription}`;
 
                     playEmbeds.push(createEmbed(play.matchup?.batter?.id || 0, playDescription));
                     messages.push({ isScoringPlay: (play.about.isScoringPlay || false), embeds: playEmbeds });
