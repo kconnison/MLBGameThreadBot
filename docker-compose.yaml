@@ -7,3 +7,4 @@ services:
       - NODE_ENV=production
     env_file:
       - .env
+    restart: always
