@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     environment:
       - NODE_ENV=production
+      - TZ=America/New_York
     env_file:
       - .env
     restart: always
