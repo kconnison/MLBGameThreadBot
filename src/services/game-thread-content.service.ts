@@ -151,7 +151,7 @@ export class GameThreadContentService {
                     .setDescription(description);
             };
 
-            let plays = this.gameInfo.getAllPlays().filter((p) => { return p.atBatIndex && p.atBatIndex > this.lastLoggedAB; });
+            let plays = this.gameInfo.getAllPlays().slice((this.lastLoggedAB + 1));
             plays.forEach((play) => {
                 // Only log the play if it is complete
                 if( play?.about?.isComplete ) {
