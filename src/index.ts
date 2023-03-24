@@ -26,7 +26,7 @@ if( TEAM_ID ) {
 let isDevMode = false;
 if( process.env.NODE_ENV == 'production' ) {
     logger.debug("Running in PROD mode, scheduling daily job...");
-    let gameScheduleJob = cron.scheduleJob({ hour: 5 }, () => {
+    let gameScheduleJob = cron.scheduleJob({ hour: 5, minute: 0 }, () => {
         initializeGameThreads();
     });
 
