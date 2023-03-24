@@ -1,0 +1,9 @@
+services:
+  mlbgamethreadbot:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
