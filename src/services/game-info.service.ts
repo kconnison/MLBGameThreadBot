@@ -143,7 +143,7 @@ export class GameInfoService {
     public getScoringPlays() {
         let retScoringPlays: any[] = [];
         let allPlays = this.getPlays().allPlays 
-        let scoringPlays = (this.getPlays().scoringPlays as number[]);
+        let scoringPlays = (this.getPlays().scoringPlays || []);
         
         scoringPlays?.forEach(pIndex => {
             retScoringPlays.push(allPlays?.at(pIndex));
@@ -157,7 +157,7 @@ export class GameInfoService {
         return highlights.sort((a,b) => {
             let aDt = new Date(a.date);
             let bDt = new Date(b.date);
-            return (a < b? -1 : (a > b? 1 : 0));
+            return (aDt < bDt? -1 : (aDt > bDt? 1 : 0));
         });
     }
 
@@ -170,7 +170,9 @@ export class GameInfoService {
     }    
 
     public getPlayerInfo(id: number) {
-        return this.playerInfo.get(id);
+        let playerInfo = this.playerInfo.get(id);
+        if(!playerInfo) this.logger.warn(`Unable to load player info for id ${id}!`);
+        return playerInfo;
     }
 
     public getBroadcasts(): GameBroadcastInfo {
