@@ -361,13 +361,18 @@ export class GameThreadStatsService {
 
         const mapLivePitchingStatsRow = (id: number) => {
             let playerInfo = this.gameInfo.getPlayerInfo(id);
-            let profile = playerInfo?.getProfile();
-            let stats = playerInfo?.getGameStats()?.pitching;
-            return `${profile?.boxscoreName}${stats?.note? ` ${stats.note}` : ""} (${playerInfo?.getGamePitchingSummary()})`;
+            if( playerInfo ) {
+                let profile = playerInfo?.getProfile();
+                let stats = playerInfo?.getGameStats()?.pitching;
+                return `${profile?.boxscoreName}${stats?.note? ` ${stats.note}` : ""} (${playerInfo?.getGamePitchingSummary()})`;
+            }
+        };
+        const isNotEmpty = (row: string | undefined) => {
+            return row && row != "";
         };
 
-        homePitchingStats = homePitchers.map(mapLivePitchingStatsRow).join("\n");
-        awayPitchingStats = awayPitchers.map(mapLivePitchingStatsRow).join("\n");
+        homePitchingStats = homePitchers.map(mapLivePitchingStatsRow).filter(isNotEmpty).join("\n");
+        awayPitchingStats = awayPitchers.map(mapLivePitchingStatsRow).filter(isNotEmpty).join("\n");
 
         return { home: homePitchingStats, away: awayPitchingStats };
     }
