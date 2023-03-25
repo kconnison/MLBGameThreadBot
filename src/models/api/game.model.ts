@@ -181,6 +181,9 @@ export declare type GameRestObject = {
                     link?: string;
                 };
             };
+            balls?: number;
+            strikes?: number;
+            outs?: number;
         };
         boxscore?: BoxscoreRestObject;
     };

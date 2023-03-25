@@ -227,7 +227,8 @@ export class GameThreadContentService {
             if( this.gameInfo.isGameStateLive() ) {      
                 let inningState = linescore.inningState;
                 let inningOrdinal = linescore.currentInningOrdinal;
-                description += ` (${inningState} ${inningOrdinal})`
+                let outs = linescore.outs;
+                description += ` (${inningState} ${inningOrdinal}${outs? `, ${outs} Out(s)` : ``})`;
             }
 
             let homeScore = linescore.teams?.home?.runs || 0;
