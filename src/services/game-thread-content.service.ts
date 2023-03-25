@@ -140,30 +140,33 @@ export class GameThreadContentService {
         try {
             const createEmbed = (playerId: number, description: string) => {
                 let playerInfo = this.gameInfo.getPlayerInfo(playerId);
-                let teamId = playerInfo?.getBoxscore().parentTeamId || 0;
-                return new EmbedBuilder()
-                    .setColor(content.colors.getTeamColor(teamId))
-                    .setAuthor({ 
-                        name: playerInfo?.getProfile().fullName || "", 
-                        iconURL: content.icon.getPlayerIcon(playerId, 100), 
-                        url: content.link.getPlayerProfileLink(playerId)
-                    })
-                    .setDescription(description);
+                if( playerInfo ) {
+                    let teamId = playerInfo?.getBoxscore().parentTeamId || 0;
+                    return new EmbedBuilder()
+                        .setColor(content.colors.getTeamColor(teamId))
+                        .setAuthor({ 
+                            name: playerInfo?.getProfile().fullName || "", 
+                            iconURL: content.icon.getPlayerIcon(playerId, 100), 
+                            url: content.link.getPlayerProfileLink(playerId)
+                        })
+                        .setDescription(description);
+                }
             };
 
             let plays = this.gameInfo.getAllPlays().slice((this.lastLoggedAB + 1));
-            plays.forEach((play) => {
+            plays.forEach((play, i) => {
                 // Only log the play if it is complete
                 if( play?.about?.isComplete ) {
-                    let playEmbeds = [];
+                    let embeds = [];
                 
                     // First check playEvents for substitutions, stolen bases, caught stealing, etc.
-                    (play.playEvents || []).forEach((event: any) => {
+                    (play.playEvents || []).forEach((event) => {
                         if(event?.details && event?.details?.eventType) {
                             let eventType: string = event.details.eventType;
                             if ( eventType.includes("_substitution") || eventType.includes("stolen_base") || eventType.includes("caught_stealing") ) {
-                                let playDescription = event.details.description.replace(/(.*:\s)/, (match: any) => bold(match));
-                                playEmbeds.push(createEmbed(event.player.id, playDescription));
+                                let playDescription = (event.details.description || "").replace(/(.*:\s)/, (match: any) => bold(match));
+                                let playEventEmbed = createEmbed(event.player?.id || 0, playDescription);
+                                if(playEventEmbed) embeds.push(playEventEmbed);
                             }
                         }
                     });
@@ -186,10 +189,14 @@ export class GameThreadContentService {
                     let inningDescription = `${halfInning.charAt(0).toUpperCase() + halfInning.slice(1)}  ${this.getInningOrdinal(play.about?.inning || 0)},`
                         + ` ${play.count?.outs} Out(s)`;
                     playDescription += `${inningDescription}`;
-
-                    playEmbeds.push(createEmbed(play.matchup?.batter?.id || 0, playDescription));
-                    messages.push({ isScoringPlay: (play.about.isScoringPlay || false), embeds: playEmbeds });
-                    this.lastLoggedAB = play.atBatIndex || 0;
+                    
+                    let playEmbed = createEmbed(play.matchup?.batter?.id || 0, playDescription);
+                    if(playEmbed) embeds.push(playEmbed);
+                    
+                    if( embeds.length > 0 ) {
+                        messages.push({ isScoringPlay: (play.about.isScoringPlay || false), embeds: embeds });
+                        this.lastLoggedAB = play.atBatIndex || i;
+                    }
                 }
             });
 
