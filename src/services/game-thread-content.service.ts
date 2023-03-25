@@ -107,12 +107,12 @@ export class GameThreadContentService {
                 let scoreboardEmbed = getBaseEmbed().setDescription(scoreSummary);
 
                 let awayBattingEmbed = getBaseEmbed()
-                    .setAuthor({ name: awayTeam.name || "", iconURL: content.icon.getTeamIcon(awayTeamId, 100) })
+                    .setAuthor({ name: awayTeam.name || "\u200B", iconURL: content.icon.getTeamIcon(awayTeamId, 100) })
                     .setDescription(battingSummary.away)
                     .setColor(content.colors.getTeamColor(awayTeamId))
                     .addFields(awayBoxscoreFields);
                 let homeBattingEmbed = getBaseEmbed()
-                    .setAuthor({ name: homeTeam.name || "", iconURL: content.icon.getTeamIcon(homeTeamId, 100) })
+                    .setAuthor({ name: homeTeam.name || "\u200B", iconURL: content.icon.getTeamIcon(homeTeamId, 100) })
                     .setDescription(battingSummary.home)
                     .setColor(content.colors.getTeamColor(homeTeamId))
                     .addFields(homeBoxscoreFields);
@@ -145,7 +145,7 @@ export class GameThreadContentService {
                     return new EmbedBuilder()
                         .setColor(content.colors.getTeamColor(teamId))
                         .setAuthor({ 
-                            name: playerInfo?.getProfile().fullName || "", 
+                            name: playerInfo?.getProfile().fullName || "\u200B", 
                             iconURL: content.icon.getPlayerIcon(playerId, 100), 
                             url: content.link.getPlayerProfileLink(playerId)
                         })
@@ -247,14 +247,14 @@ export class GameThreadContentService {
 
     private addGameInfo(fields: APIEmbedField[]) {
         // Add Venue Info
-        fields.push({ name: "Venue", value: this.gameInfo.getVenue().name || "" });
+        fields.push({ name: "Venue", value: this.gameInfo.getVenue().name || "\u200B" });
 
         // Add Weather Info
         let weather = this.gameInfo.getWeather();
         if( Object.keys(weather).length > 0 ) {
-            let temp = this.gameInfo.getWeather().temp || "";
-            let condition = this.gameInfo.getWeather().condition || "";
-            let wind = this.gameInfo.getWeather().wind || "";
+            let temp = this.gameInfo.getWeather().temp || "\u200B";
+            let condition = this.gameInfo.getWeather().condition || "\u200B";
+            let wind = this.gameInfo.getWeather().wind || "\u200B";
             fields.push({ name: "Weather", value: `${temp}\u00B0 F, ${condition}`, inline: true });
             fields.push({ name: "Wind", value: wind, inline: true });
         }
