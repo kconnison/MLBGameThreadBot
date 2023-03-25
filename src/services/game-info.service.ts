@@ -54,10 +54,13 @@ export class GameInfoService {
         let pGameContent = mlb.game.getContent(gamePk);
         [this.gameObject, this.gameContentObject] = await Promise.all([pGameInfo, pGameContent]);
 
-        //call this again here in case lineups were not available on first load
-        await this.parsePlayerStatsVsProbPitcher();
+        // rebuild player info map with updated data
+        this.parsePlayerInfo(this.gameObject);
 
-        this.updatePlayerBoxscores(this.gameObject);
+        //call this again here in case lineups were not available on first load
+        if( this.isGameStatePreview() ) {
+            await this.parsePlayerStatsVsProbPitcher();
+        }        
 
         return;
     }
@@ -220,22 +223,8 @@ export class GameInfoService {
             let playerInfo = new PlayerInfo(playerProfile).setBoxscore(playerBoxscore);
             this.playerInfo.set(playerId, playerInfo);
         }
-    }
 
-    private updatePlayerBoxscores(gameInfo: GameRestObject) {
-        let homePlayerBoxscores = gameInfo.liveData?.boxscore?.teams?.home?.players || {};
-        let awayPlayerBoxscores = gameInfo.liveData?.boxscore?.teams?.away?.players || {};
-        let playerBoxscores: any = {
-            ...homePlayerBoxscores,
-            ...awayPlayerBoxscores
-        };
-
-        for (let id in playerBoxscores) {
-            let playerBoxscore: BoxscorePlayer = playerBoxscores[id];
-            let playerId = playerBoxscore.person?.id || 0;
-
-            this.playerInfo.get(playerId)?.setBoxscore(playerBoxscore);
-        }
+        this.logger.debug(`PlayerInfo map size: ${this.playerInfo.size}`);
     }
 
     private async parsePlayerStatsVsProbPitcher() {
