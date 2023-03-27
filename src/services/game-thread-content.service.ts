@@ -139,11 +139,10 @@ export class GameThreadContentService {
         let messages: PlayByPlayMessage[] = [];
         try {
             const buildScoreDescription = (homeScore: number, awayScore: number) => {
-                let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
-                let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
+                let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation || "";
+                let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation || "";
 
-                return (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
-                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
+                return this.buildScoreDescription(homeScore, homeAbbrev, awayScore, awayAbbrev);
             };
 
             const createEmbed = (playerId: number, description: string) => {
@@ -219,6 +218,21 @@ export class GameThreadContentService {
         return messages;
     }
 
+    public getFinalScoreMessage() {
+        let linescore = this.gameInfo.getLinescore();
+        let homeScore = linescore.teams?.home?.runs || 0;
+        let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
+        let awayScore = linescore.teams?.away?.runs || 0;
+        let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
+
+        let scoreDescription = this.buildScoreDescription(homeScore, homeTeamName, awayScore, awayTeamName);
+        let embed = new EmbedBuilder()
+            .setColor(content.colors.getTeamColor(0))
+            .setDescription(`${bold("FINAL:")} ${scoreDescription}`);
+
+        return { isScoringPlay: false, embeds: [embed] };
+    }
+
     private getSummaryEmbedTitle() {
         let homeTeam = this.gameInfo.getHomeTeam();
         let homeNameRecord = `${homeTeam?.name} (${homeTeam?.record?.wins}-${homeTeam?.record?.losses})`;
@@ -245,13 +259,12 @@ export class GameThreadContentService {
             }
 
             let homeScore = linescore.teams?.home?.runs || 0;
-            let homeTeamName = this.gameInfo.getHomeTeam().teamName;
+            let homeTeamName = this.gameInfo.getHomeTeam().teamName || "";
 
             let awayScore = linescore.teams?.away?.runs || 0;
-            let awayTeamName = this.gameInfo.getAwayTeam().teamName;
+            let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
 
-            let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeTeamName}` : 
-                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayTeamName}` : `${homeScore}-${awayScore}`));
+            let scoreDescription = this.buildScoreDescription(homeScore, homeTeamName, awayScore, awayTeamName);
             description += ` | ${bold("Score:")} ${scoreDescription}`;
         }
 
@@ -394,6 +407,11 @@ export class GameThreadContentService {
           ord = 'rd';
         }      
         return n + ord;
+    }
+
+    private buildScoreDescription(homeScore: number, homeTeam: string, awayScore: number, awayTeam: string) {
+        return (homeScore > awayScore? `${homeScore}-${awayScore} ${homeTeam}` : 
+                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayTeam}` : `${homeScore}-${awayScore}`));
     }
 }
 
