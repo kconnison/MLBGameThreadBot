@@ -172,7 +172,7 @@ export class GameThreadContentService {
                         if(event?.details && event?.details?.eventType) {
                             let eventType: string = event.details.eventType;
                             if ( eventType.includes("_substitution") || eventType.includes("stolen_base") 
-                                || eventType.includes("caught_stealing") || eventType.includes("balk") ) {
+                                || eventType.includes("caught_stealing") || eventType.includes("balk") || eventType.includes("error") ) {
                                 let playDescription = (event.details.description || "").replace(/(.*:\s)/, (match: any) => bold(match));
 
                                 // if event is a scoring play, add score to message
