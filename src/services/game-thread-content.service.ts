@@ -138,6 +138,14 @@ export class GameThreadContentService {
     public getPlayByPlayMessages() {
         let messages: PlayByPlayMessage[] = [];
         try {
+            const buildScoreDescription = (homeScore: number, awayScore: number) => {
+                let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
+                let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
+
+                return (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
+                (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
+            };
+
             const createEmbed = (playerId: number, description: string) => {
                 let playerInfo = this.gameInfo.getPlayerInfo(playerId);
                 if( playerInfo ) {
@@ -163,8 +171,18 @@ export class GameThreadContentService {
                     (play.playEvents || []).forEach((event) => {
                         if(event?.details && event?.details?.eventType) {
                             let eventType: string = event.details.eventType;
-                            if ( eventType.includes("_substitution") || eventType.includes("stolen_base") || eventType.includes("caught_stealing") ) {
+                            if ( eventType.includes("_substitution") || eventType.includes("stolen_base") 
+                                || eventType.includes("caught_stealing") || eventType.includes("balk") ) {
                                 let playDescription = (event.details.description || "").replace(/(.*:\s)/, (match: any) => bold(match));
+
+                                // if event is a scoring play, add score to message
+                                if( event.details.isScoringPlay ) {
+                                    let homeScore = event.details.homeScore || 0;                                                
+                                    let awayScore = event.details.awayScore || 0;
+                                    let scoreDescription = buildScoreDescription(homeScore, awayScore);
+                                    playDescription += `\n\n${scoreDescription}`;
+                                }
+
                                 let playEventEmbed = createEmbed(event.player?.id || 0, playDescription);
                                 if(playEventEmbed) embeds.push(playEventEmbed);
                             }
@@ -173,15 +191,10 @@ export class GameThreadContentService {
     
                     // Then create embed for the actual play itself
                     let playDescription = `${bold(play.result?.event+":")} ${play.result?.description}\n\n`;
-                    if( play.about.isScoringPlay ) {
-                        let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation;
-                        let homeScore = play.result?.homeScore || 0;                        
-                        let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation;
+                    if( play.about.isScoringPlay ) {                        
+                        let homeScore = play.result?.homeScore || 0;                                                
                         let awayScore = play.result?.awayScore || 0;
-
-                        let scoreDescription = (homeScore > awayScore? `${homeScore}-${awayScore} ${homeAbbrev}` : 
-                        (homeScore < awayScore? `${awayScore}-${homeScore} ${awayAbbrev}` : `${homeScore}-${awayScore}`));
-
+                        let scoreDescription = buildScoreDescription(homeScore, awayScore);
                         playDescription += `${scoreDescription} | `;
                     }
 
