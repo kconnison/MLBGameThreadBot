@@ -228,7 +228,7 @@ export class GameThreadContentService {
         let scoreDescription = this.buildScoreDescription(homeScore, homeTeamName, awayScore, awayTeamName);
         let embed = new EmbedBuilder()
             .setColor(content.colors.getTeamColor(0))
-            .setDescription(`${bold("FINAL:")} ${scoreDescription}`);
+            .setDescription(`${bold("Final:")} ${scoreDescription}`);
 
         return { isScoringPlay: false, embeds: [embed] };
     }
@@ -255,7 +255,7 @@ export class GameThreadContentService {
                 let inningState = linescore.inningState;
                 let inningOrdinal = linescore.currentInningOrdinal;
                 let outs = linescore.outs;
-                description += ` (${inningState} ${inningOrdinal}${outs? `, ${outs} Out(s)` : ``})`;
+                description += ` - ${inningState} ${inningOrdinal}${outs? `, ${outs} Out(s)` : ``}`;
             }
 
             let homeScore = linescore.teams?.home?.runs || 0;
