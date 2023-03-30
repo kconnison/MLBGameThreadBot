@@ -138,6 +138,16 @@ export class GameThreadContentService {
     public getPlayByPlayMessages() {
         let messages: PlayByPlayMessage[] = [];
         try {
+            const canLogPlayEvent = (event: any) => {
+                let eventType: string = event.details.eventType; 
+                let isLoggableEventType = (eventType.includes("_substitution") || eventType.includes("stolen_base") 
+                    || eventType.includes("caught_stealing") || eventType.includes("balk") 
+                    || eventType.includes("wild_pitch") || eventType.includes("passed_ball")
+                    || eventType.includes("error"));
+                    
+                return isLoggableEventType || event.details.isScoringPlay;
+            };
+
             const buildScoreDescription = (homeScore: number, awayScore: number) => {
                 let homeAbbrev = this.gameInfo.getHomeTeam().abbreviation || "";
                 let awayAbbrev = this.gameInfo.getAwayTeam().abbreviation || "";
@@ -168,10 +178,8 @@ export class GameThreadContentService {
                 
                     // First check playEvents for substitutions, stolen bases, caught stealing, etc.
                     (play.playEvents || []).forEach((event) => {
-                        if(event?.details && event?.details?.eventType) {
-                            let eventType: string = event.details.eventType;
-                            if ( eventType.includes("_substitution") || eventType.includes("stolen_base") 
-                                || eventType.includes("caught_stealing") || eventType.includes("balk") || eventType.includes("error") ) {
+                        if(event?.details && event?.details?.eventType) {                                                    
+                            if ( canLogPlayEvent(event) ) {
                                 let playDescription = (event.details.description || "").replace(/(.*:\s)/, (match: any) => bold(match));
 
                                 // if event is a scoring play, add score to message
