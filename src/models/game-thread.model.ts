@@ -65,6 +65,9 @@ export class GameThread {
             return this.gameInfo.update(timecode).then(() => {
                 this.discord.editThreads(this.discordThreadRefs, this.content.getGameInfoEmbeds());
                 this.discord.postMessages(this.discordThreadRefs, this.content.getPlayByPlayMessages());
+                if( this.gameInfo.isGameStateFinal() ) {
+                    this.discord.postMessages(this.discordThreadRefs, [this.content.getFinalScoreMessage()]);
+                }
             });
         }; 
 
@@ -101,9 +104,7 @@ export class GameThread {
                     this.logger.debug(`Updated to Live schedule: ${hasSetLiveSchedule}`);
                     
                 } else if( this.gameInfo.isGameStateFinal() ) {
-                    this.logger.debug(`Game has ended, posting final score and cancelling job...`);
-                    this.discord.postMessages(this.discordThreadRefs, [this.content.getFinalScoreMessage()]);
-                    
+                    this.logger.debug(`Game has ended, cancelling job...`);                                        
                     let hasCancelled = threadUpdateJob.cancel();                    
                     this.logger.debug(`Job cancelled successfully: ${hasCancelled}`);
                 }
