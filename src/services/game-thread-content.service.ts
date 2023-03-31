@@ -121,11 +121,13 @@ export class GameThreadContentService {
                 let boxscoreInfoEmbed = getBaseEmbed().setTitle("Game Info").setDescription(this.getGameBoxscoreInfo());
                 embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
 
-                // Add highlights (if they exist)   
-                let highlights = this.getHighlights();
-                if( highlights.length > 0 ) {
-                    let highlightsEmbed = getBaseEmbed().setTitle("Highlights").setDescription(highlights);
-                    embeds.push(highlightsEmbed);  
+                // Add highlights (only during live game, if they exist)   
+                if( this.gameInfo.isGameStateLive() ) {
+                    let highlights = this.getHighlights();
+                    if( highlights.length > 0 ) {
+                        let highlightsEmbed = getBaseEmbed().setTitle("Highlights").setDescription(highlights);
+                        embeds.push(highlightsEmbed);  
+                    }
                 }
             }
 
@@ -233,12 +235,25 @@ export class GameThreadContentService {
         let awayScore = linescore.teams?.away?.runs || 0;
         let awayTeamName = this.gameInfo.getAwayTeam().teamName || "";
 
+        let embeds = [];
+
         let scoreDescription = this.buildScoreDescription(homeScore, homeTeamName, awayScore, awayTeamName);
-        let embed = new EmbedBuilder()
+        let finalScoreEmbed = new EmbedBuilder()
             .setColor(content.colors.getTeamColor(0))
             .setDescription(`${bold("Final:")} ${scoreDescription}`);
+        embeds.push(finalScoreEmbed);
+        
+        // post highlights (if they exist)
+        let highlights = this.getHighlights();
+        if( highlights.length > 0 ) {
+            let highlightsEmbed = new EmbedBuilder()
+                .setColor(content.colors.getTeamColor(0))
+                .setTitle("Highlights")
+                .setDescription(highlights);
+            embeds.push(highlightsEmbed);
+        }
 
-        return { isScoringPlay: false, embeds: [embed] };
+        return { isScoringPlay: true, embeds: embeds };
     }
 
     private getSummaryEmbedTitle() {
