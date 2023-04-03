@@ -196,9 +196,10 @@ export class GameInfoService {
             let isNational = broadcast.isNational;
             let market = (isNational? "national" : broadcast.homeAway);
 
-            if( ["AM", "FM"].includes(broadcast.type) ) {
+            if( ["AM", "FM"].includes(broadcast.type) && !broadcastInfo.radio[market].includes(broadcast.name) ) {
                 broadcastInfo.radio[market].push(broadcast.name);
-            } else if( ["TV"].includes(broadcast.type) ) {
+
+            } else if( ["TV"].includes(broadcast.type) && !broadcastInfo.tv[market].includes(broadcast.name) ) {
                 broadcastInfo.tv[market].push(broadcast.name);
             }
         });
