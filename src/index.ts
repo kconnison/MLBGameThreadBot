@@ -47,7 +47,11 @@ async function initializeGameThreads(scheduleDate: Date = new Date()) {
     logger.debug(`Initializing game threads, schedule date is ${scheduleDate} ...`);
     
     let schedOpts = (TEAM_ID? { teamId: TEAM_ID, date: date.format.toMM_DD_YYYY(scheduleDate) } : {});
-    let gamePks = (await mlb.schedule.getSchedule([], schedOpts)).dates?.at(0)?.games?.map(gm => { return gm.gamePk; }) || [];
+    let gamePks = (await mlb.schedule.getSchedule([], schedOpts)).dates?.at(0)?.games?.filter(gm => {
+        return gm.status?.detailedState != "Postponed";
+    }).map(gm => { 
+        return gm.gamePk; 
+    }) || [];
     logger.debug(`${gamePks.length} game(s) scheduled today!`, gamePks);
 
     gamePks.forEach(async gamePk => {

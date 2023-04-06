@@ -17,8 +17,8 @@ export declare type ScheduleRestDateObject = {
     games?: Array<ScheduleRestGameObject>;
     events?: Array<any>;
 };
-export declare type GameStatusCode = "S" | "P" | "I" | "F";
-export declare type GameDetailedState = "Scheduled" | "Pre-Game" | "In Progress" | "Finished";
+export declare type GameStatusCode = "S" | "P" | "I" | "F" | "D" | "DI";
+export declare type GameDetailedState = "Scheduled" | "Pre-Game" | "In Progress" | "Finished" | "Postponed";
 export declare type AbstractGameCode = "P" | "L" | "F";
 export declare type AbstractGameState = "Preview" | "Live" | "Final";
 export declare type GameStatus = {
