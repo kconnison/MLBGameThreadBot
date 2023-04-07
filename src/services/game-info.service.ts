@@ -42,7 +42,7 @@ export class GameInfoService {
 
         this.parseBroadcasts(this.scheduleObject?.broadcasts || []);
         this.parsePlayerInfo(gameInfo);
-        await this.parsePlayerStatsVsProbPitcher();
+        await this.loadBatterStatsVsProbPitcher();
 
         return;
     }
@@ -59,7 +59,7 @@ export class GameInfoService {
 
         //call this again here in case lineups were not available on first load
         if( this.isGameStatePreview() ) {
-            await this.parsePlayerStatsVsProbPitcher();
+            await this.loadBatterStatsVsProbPitcher();
         }        
 
         return;
@@ -228,7 +228,7 @@ export class GameInfoService {
         this.logger.debug(`PlayerInfo map size: ${this.playerInfo.size}`);
     }
 
-    private async parsePlayerStatsVsProbPitcher() {
+    private async loadBatterStatsVsProbPitcher() {
         let probablePitchers = this.getProbablePitchers();
 
         let homeBox = this.getBoxscore().teams?.home;
@@ -242,12 +242,12 @@ export class GameInfoService {
         if( homeBattingOrder.length > 0 && probablePitchers.away && this.batterStats.home.size == 0 ) {
             this.logger.debug("Home batting order present AND no stats loaded; loading stats...");
             let awayPitchId = probablePitchers.away?.getProfile().id || 0;
-            this.batterStats.home = await this.loadBatterStatsVsProbPitcher(homeBattingOrder, awayPitchId);
+            this.batterStats.home = await this.fetchBatterStatsVsProbPitcher(homeBattingOrder, awayPitchId);
         }
         if( awayBattingOrder.length > 0 && probablePitchers.home && this.batterStats.away.size == 0 ) {
             this.logger.debug("Away batting order present AND no stats loaded; loading stats...");
             let homePitchId = probablePitchers.home?.getProfile().id || 0;
-            this.batterStats.away = await this.loadBatterStatsVsProbPitcher(awayBattingOrder, homePitchId);
+            this.batterStats.away = await this.fetchBatterStatsVsProbPitcher(awayBattingOrder, homePitchId);
         }
     }
 
@@ -257,7 +257,7 @@ export class GameInfoService {
      * @param pitcherId 
      * @returns 
      */
-    private async loadBatterStatsVsProbPitcher(batterIds: number[], pitcherId: number) {
+    private async fetchBatterStatsVsProbPitcher(batterIds: number[], pitcherId: number) {
         this.logger.debug(`Fetching batter stats (${batterIds}) vs pitcher (${pitcherId})...`);
 
         let stats = new Map<number, any>();
