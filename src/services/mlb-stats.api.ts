@@ -2,24 +2,11 @@ import { GameContentRestObject } from "../models/api/game-content.model";
 import { GameRestObject } from "../models/api/game.model";
 import { PeopleRestObject } from "../models/api/people.model";
 import { ScheduleRestObject } from "../models/api/schedule.model";
+import { StandingsRestObject } from "../models/api/standings.model";
 import { http } from "../utils/http.utils";
 
 export namespace mlb {
     const baseURL = "https://statsapi.mlb.com/api";
-
-    export namespace schedule {
-        export function getSchedule(gamePks: number[] = [], options: { teamId?: number; date?: string; hydrate?: string; } = {}) {
-            let url = `${baseURL}/v1/schedule?sportId=1`;
-            if( gamePks.length > 0 ) {
-                url += `&gamePk=${gamePks.join(",")}`;
-            }
-            Object.keys(options).forEach((opt) => {
-                url += `&${opt}=${(options as any)[opt]}`;
-            });
-            
-            return http.get<ScheduleRestObject>(url);
-        }
-    }
 
     export namespace game {
         export function getLiveGameV1(gamePk: number, options: { timecode?: string; } = {}) {
@@ -47,6 +34,27 @@ export namespace mlb {
             let hydration = `stats(group=[hitting],type=[vsPlayer],opposingPlayerId=${opposingPlayerId},sportId=1)`;
             url += `?personIds=${personIds.join(",")}&hydrate=${hydration}`;
             return http.get<PeopleRestObject>(url);
+        }
+    }
+
+    export namespace schedule {
+        export function getSchedule(gamePks: number[] = [], options: { teamId?: number; date?: string; hydrate?: string; } = {}) {
+            let url = `${baseURL}/v1/schedule?sportId=1`;
+            if( gamePks.length > 0 ) {
+                url += `&gamePk=${gamePks.join(",")}`;
+            }
+            Object.keys(options).forEach((opt) => {
+                url += `&${opt}=${(options as any)[opt]}`;
+            });
+            
+            return http.get<ScheduleRestObject>(url);
+        }
+    }
+
+    export namespace standings {
+        export function getStandingsByDivision(leagueIds: number[]) {
+            let url = `${baseURL}/v1/standings?leagueId=${leagueIds.join(",")}&standingsTypes=byDivision`;
+            return http.get<StandingsRestObject>(url);
         }
     }
 }
