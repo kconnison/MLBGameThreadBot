@@ -6,10 +6,12 @@ import { date } from "../utils/date.utils";
 import { GameInfoService } from "./game-info.service";
 import { GameThreadStatsService } from "./game-thread-stats.service";
 import { LoggerService } from "./logger.service";
+import { StandingsService } from "./standings.service";
 
 export class GameThreadContentService {
     private logger: LoggerService;
     private stats: GameThreadStatsService;
+    private standings: StandingsService
 
     private lastLoggedAB: number = -1;
 
@@ -17,6 +19,20 @@ export class GameThreadContentService {
         this.logger = new LoggerService(GameThreadContentService.name);
 
         this.stats = new GameThreadStatsService(gameInfo);
+        this.standings = new StandingsService();
+    }
+
+    public initialize(gamePk: number, timecode?: string) {
+        return this.gameInfo.load(gamePk, timecode).then(async () => {
+            let leagueIds = new Set<number>();
+            leagueIds.add((this.gameInfo.getHomeTeam().league?.id || 0));
+            leagueIds.add((this.gameInfo.getAwayTeam().league?.id || 0));
+            await this.standings.loadStandingsByDivision(Array.from(leagueIds));
+        });
+    }
+
+    public update(timecode?: string) {
+        return this.gameInfo.update(timecode);
     }
 
     public getThreadTitle() {

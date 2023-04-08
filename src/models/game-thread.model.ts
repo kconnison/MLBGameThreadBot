@@ -34,7 +34,7 @@ export class GameThread {
             timecode = process.env.DEV_TS_SCHEDULE || date.format.toTimecode(new Date());
         }
 
-        this.gameInfo.load(this.gamePk, timecode).then(async () => {
+        this.content.initialize(this.gamePk, timecode).then(async () => {
             this.createDiscordThreads();
             this.scheduleThreadUpdateJob();
         });
@@ -62,7 +62,7 @@ export class GameThread {
         const updateCallback = (timecode?: string) => {
             this.logger.debug("Updating thread content...");
 
-            return this.gameInfo.update(timecode).then(() => {
+            return this.content.update(timecode).then(() => {
                 this.discord.editThreads(this.discordThreadRefs, this.content.getGameInfoEmbeds());
                 this.discord.postMessages(this.discordThreadRefs, this.content.getPlayByPlayMessages());
                 if( this.gameInfo.isGameStateFinal() ) {
