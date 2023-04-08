@@ -108,6 +108,10 @@ declare type LeagueRestObject = {
 
 declare type DivisionRestObject = {
     id?: number;
+    name?: string;
+    nameShort?: string;
+    abbreviation?: string;
+    season?: string;
     link?: string;
 };
 

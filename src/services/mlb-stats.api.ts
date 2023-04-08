@@ -53,7 +53,7 @@ export namespace mlb {
 
     export namespace standings {
         export function getStandingsByDivision(leagueIds: number[]) {
-            let url = `${baseURL}/v1/standings?leagueId=${leagueIds.join(",")}&standingsTypes=byDivision`;
+            let url = `${baseURL}/v1/standings?leagueId=${leagueIds.join(",")}&standingsTypes=byDivision&hydrate=division`;
             return http.get<StandingsRestObject>(url);
         }
     }
