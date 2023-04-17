@@ -268,9 +268,28 @@ export class GameThreadContentService {
 
     private getSummaryEmbedDescription() {
         let description = `${bold("Game Status:")} ${this.gameInfo.getGameStatus().detailedState}`;    
+        
+        // If game postponed, include reason & reschedule date
+        if( this.gameInfo.isGameStatePostponed() ) {
+            description += ` - ${this.gameInfo.getGameStatus().reason || "(No Reason Given)"}`;
 
-        // If game not in preview state, include score in description
-        if( !this.gameInfo.isGameStatePreview() ) {
+            let gRescheduleDate = this.gameInfo.getRescheduleDate();
+            let rescheduleDate = new Date(gRescheduleDate || "");
+            if( isNaN(rescheduleDate.getTime()) ) {
+                this.logger.warn("RescheduleDate value from GameInfo is not a valid date:", gRescheduleDate);
+
+            } else {
+                let wkday = rescheduleDate.toLocaleDateString('en-US', { weekday: "short" });
+                let month = rescheduleDate.toLocaleDateString('en-US', { month: 'short' });
+                let day = rescheduleDate.getDate().toString().padStart(2,"0");
+                let year = rescheduleDate.getFullYear();
+
+                let time = date.format.toHHMM(rescheduleDate);
+                description += `\n${bold("Reschedule Date:")} ${wkday} ${day} ${month} ${year} @ ${time}`
+            }
+
+        // If game in Live/Final state, include score in description
+        } else if( this.gameInfo.isGameStateLive() || this.gameInfo.isGameStateFinal() ) {
             let linescore = this.gameInfo.getLinescore();
 
             // If game is live, include current inning
