@@ -74,7 +74,7 @@ export class GameThreadContentService {
                 .addFields({ name: "Last Updated:", value: time() })
             embeds.push(summaryEmbed);
 
-            this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().abstractGameState}`);
+            this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().detailedState}`);
 
             // If game in Preview state, show probable pitchers 
             // & starting lineup w/ stats against probable pitcher
