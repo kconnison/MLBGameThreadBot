@@ -90,59 +90,62 @@ export class GameThreadContentService {
                 .addFields({ name: "Last Updated:", value: time() })
             embeds.push(summaryEmbed);
 
-            this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().abstractGameState}`);
+            this.logger.debug(`GamePK: ${gamePk}; Game State: ${this.gameInfo.getGameStatus().detailedState}`);
 
-            // If game in Preview state, show probable pitchers 
-            // & starting lineup w/ stats against probable pitcher
-            if( this.gameInfo.isGameStatePreview() ) {        
-                let lineupFields: APIEmbedField[] = [];                
-                this.addStartingLineup(lineupFields);
+            // Only show additional info if game still scheduled
+            if( !this.gameInfo.isGameStatePostponed() ) {
+                // If game in Preview state, show probable pitchers 
+                // & starting lineup w/ stats against probable pitcher
+                if( this.gameInfo.isGameStatePreview() ) {        
+                    let lineupFields: APIEmbedField[] = [];                
+                    this.addStartingLineup(lineupFields);
 
-                let pitcherEmbed = getBaseEmbed()
-                    .setTitle("Probable Pitchers (Season Stats)")
-                    .setDescription(this.stats.buildProbablePitchersSummary());
-                let lineupEmbed = getBaseEmbed()
-                    .setTitle("Starting Lineups vs Probable Pitchers")
-                    .addFields(lineupFields);
+                    let pitcherEmbed = getBaseEmbed()
+                        .setTitle("Probable Pitchers (Season Stats)")
+                        .setDescription(this.stats.buildProbablePitchersSummary());
+                    let lineupEmbed = getBaseEmbed()
+                        .setTitle("Starting Lineups vs Probable Pitchers")
+                        .addFields(lineupFields);
 
-                embeds.push(pitcherEmbed, lineupEmbed);
+                    embeds.push(pitcherEmbed, lineupEmbed);
 
-            // Game is Live/Final, show in-game stats table
-            // & other in-game information
-            } else {
-                let awayBoxscoreFields: APIEmbedField[] = [];
-                let homeBoxscoreFields: APIEmbedField[] = [];
-                let pitchingFields: APIEmbedField[] = [];
-                
+                // Game is Live/Final, show in-game stats table
+                // & other in-game information
+                } else {
+                    let awayBoxscoreFields: APIEmbedField[] = [];
+                    let homeBoxscoreFields: APIEmbedField[] = [];
+                    let pitchingFields: APIEmbedField[] = [];
+                    
 
-                let battingSummary = this.stats.buildLiveBattingStatsSummary();
-                this.addTeamBoxscoreInfo(homeBoxscoreFields, awayBoxscoreFields);
-                this.addLivePitchingStats(pitchingFields);                
+                    let battingSummary = this.stats.buildLiveBattingStatsSummary();
+                    this.addTeamBoxscoreInfo(homeBoxscoreFields, awayBoxscoreFields);
+                    this.addLivePitchingStats(pitchingFields);                
 
-                let scoreSummary = this.stats.buildScoreboardSummary();
-                let scoreboardEmbed = getBaseEmbed().setDescription(scoreSummary);
+                    let scoreSummary = this.stats.buildScoreboardSummary();
+                    let scoreboardEmbed = getBaseEmbed().setDescription(scoreSummary);
 
-                let awayBattingEmbed = getBaseEmbed()
-                    .setAuthor({ name: awayTeam.name || "\u200B", iconURL: content.icon.getTeamIcon(awayTeamId, 100) })
-                    .setDescription(battingSummary.away)
-                    .setColor(content.colors.getTeamColor(awayTeamId))
-                    .addFields(awayBoxscoreFields);
-                let homeBattingEmbed = getBaseEmbed()
-                    .setAuthor({ name: homeTeam.name || "\u200B", iconURL: content.icon.getTeamIcon(homeTeamId, 100) })
-                    .setDescription(battingSummary.home)
-                    .setColor(content.colors.getTeamColor(homeTeamId))
-                    .addFields(homeBoxscoreFields);
+                    let awayBattingEmbed = getBaseEmbed()
+                        .setAuthor({ name: awayTeam.name || "\u200B", iconURL: content.icon.getTeamIcon(awayTeamId, 100) })
+                        .setDescription(battingSummary.away)
+                        .setColor(content.colors.getTeamColor(awayTeamId))
+                        .addFields(awayBoxscoreFields);
+                    let homeBattingEmbed = getBaseEmbed()
+                        .setAuthor({ name: homeTeam.name || "\u200B", iconURL: content.icon.getTeamIcon(homeTeamId, 100) })
+                        .setDescription(battingSummary.home)
+                        .setColor(content.colors.getTeamColor(homeTeamId))
+                        .addFields(homeBoxscoreFields);
 
-                let pitchingEmbed = getBaseEmbed().setTitle("Pitching").addFields(pitchingFields);
-                let boxscoreInfoEmbed = getBaseEmbed().setTitle("Game Info").setDescription(this.getGameBoxscoreInfo());
-                embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
+                    let pitchingEmbed = getBaseEmbed().setTitle("Pitching").addFields(pitchingFields);
+                    let boxscoreInfoEmbed = getBaseEmbed().setTitle("Game Info").setDescription(this.getGameBoxscoreInfo());
+                    embeds.push(scoreboardEmbed, awayBattingEmbed, homeBattingEmbed, pitchingEmbed, boxscoreInfoEmbed);
 
-                // Add highlights (only during live game, if they exist)   
-                if( this.gameInfo.isGameStateLive() ) {
-                    let highlights = this.getHighlights();
-                    if( highlights.length > 0 ) {
-                        let highlightsEmbed = getBaseEmbed().setTitle("Highlights").setDescription(highlights);
-                        embeds.push(highlightsEmbed);  
+                    // Add highlights (only during live game, if they exist)   
+                    if( this.gameInfo.isGameStateLive() ) {
+                        let highlights = this.getHighlights();
+                        if( highlights.length > 0 ) {
+                            let highlightsEmbed = getBaseEmbed().setTitle("Highlights").setDescription(highlights);
+                            embeds.push(highlightsEmbed);  
+                        }
                     }
                 }
             }
@@ -284,9 +287,28 @@ export class GameThreadContentService {
 
     private getSummaryEmbedDescription() {
         let description = `${bold("Game Status:")} ${this.gameInfo.getGameStatus().detailedState}`;    
+        
+        // If game postponed, include reason & reschedule date
+        if( this.gameInfo.isGameStatePostponed() ) {
+            description += ` - ${this.gameInfo.getGameStatus().reason || "(No Reason Given)"}`;
 
-        // If game not in preview state, include score in description
-        if( !this.gameInfo.isGameStatePreview() ) {
+            let gRescheduleDate = this.gameInfo.getRescheduleDate();
+            let rescheduleDate = new Date(gRescheduleDate || "");
+            if( isNaN(rescheduleDate.getTime()) ) {
+                this.logger.warn("RescheduleDate value from GameInfo is not a valid date:", gRescheduleDate);
+
+            } else {
+                let wkday = rescheduleDate.toLocaleDateString('en-US', { weekday: "short" });
+                let month = rescheduleDate.toLocaleDateString('en-US', { month: 'short' });
+                let day = rescheduleDate.getDate().toString().padStart(2,"0");
+                let year = rescheduleDate.getFullYear();
+
+                let time = date.format.toHHMM(rescheduleDate);
+                description += `\n${bold("Reschedule Date:")} ${wkday} ${day} ${month} ${year} @ ${time}`
+            }
+
+        // If game in Live/Final state, include score in description
+        } else if( this.gameInfo.isGameStateLive() || this.gameInfo.isGameStateFinal() ) {
             let linescore = this.gameInfo.getLinescore();
 
             // If game is live, include current inning
@@ -342,7 +364,9 @@ export class GameThreadContentService {
                 + `${bold("First Pitch:")} ${firstPitch}\n`
                 + (gameLength? `${bold("Length:")} ${gameLength}`: "")
             fields.push({ name: "Game Info", value: gameInfoValue });
-        }        
+        }    
+        
+        fields.push({ name: '\u200B', value: '\u200B' });
     }
 
     private addBroadcastInfo(fields: APIEmbedField[]) {
