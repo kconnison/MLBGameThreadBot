@@ -33,15 +33,15 @@ export class GameInfoService {
         let pGameInfo = mlb.game.getLiveGameV1(gamePk, (timecode? { timecode } : {}));
         let pGameContent = mlb.game.getContent(gamePk);
 
-        let schedule, gameInfo, gameContent;
-        [schedule, gameInfo, gameContent] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
+        let scheduleResponse, gameInfoResponse, gameContentResponse;
+        [scheduleResponse, gameInfoResponse, gameContentResponse] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
 
-        this.scheduleObject = schedule?.dates?.at(0)?.games?.at(0) || {};
-        this.gameObject = gameInfo;
-        this.gameContentObject = gameContent;
+        this.scheduleObject = scheduleResponse?.dates?.at(0)?.games?.at(0) || {};
+        this.gameObject = gameInfoResponse;
+        this.gameContentObject = gameContentResponse;
 
         this.parseBroadcasts(this.scheduleObject?.broadcasts || []);
-        this.parsePlayerInfo(gameInfo);
+        this.parsePlayerInfo(gameInfoResponse);
         await this.parsePlayerStatsVsProbPitcher();
 
         return;
@@ -50,9 +50,13 @@ export class GameInfoService {
     public async update(timecode?: string) {
         let gamePk = this.gamePk;
 
+        let pSchedule = mlb.schedule.getSchedule([gamePk], { hydrate: "broadcasts" });
         let pGameInfo = mlb.game.getLiveGameV1(gamePk, (timecode? { timecode } : {}));
         let pGameContent = mlb.game.getContent(gamePk);
-        [this.gameObject, this.gameContentObject] = await Promise.all([pGameInfo, pGameContent]);
+
+        let scheduleResponse;
+        [scheduleResponse, this.gameObject, this.gameContentObject] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
+        this.scheduleObject = scheduleResponse?.dates?.at(0)?.games?.at(0) || {};
 
         // rebuild player info map with updated data
         this.parsePlayerInfo(this.gameObject);
@@ -69,8 +73,12 @@ export class GameInfoService {
         return this.gameObject?.gameData?.datetime || {};
     }
 
+    public getRescheduleDate() {
+        return this.scheduleObject?.rescheduleDate;
+    }
+
     public getGameStatus() {
-        return this.gameObject?.gameData?.status || {};
+        return this.scheduleObject?.status || {};
     }
 
     /**
@@ -95,6 +103,14 @@ export class GameInfoService {
      */
     public isGameStateFinal() {
         return (this.getGameStatus().abstractGameState == "Final");
+    }
+
+    /**
+     * Determine if game state is "Postponed"
+     * @returns 
+     */
+    public isGameStatePostponed() {
+        return (this.getGameStatus().detailedState == "Postponed");
     }
 
     public getHomeTeam() {
