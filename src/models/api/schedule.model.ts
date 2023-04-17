@@ -28,6 +28,7 @@ export declare type GameStatus = {
     statusCode?: GameStatusCode;
     startTimeTBD?: boolean;
     abstractGameCode?: AbstractGameCode;
+    reason?: string;
 };
 export declare type ScheduleRestGameObject = {
     gamePk?: number;
@@ -36,6 +37,8 @@ export declare type ScheduleRestGameObject = {
     season?: string;
     gameDate?: string;
     officialDate?: string;
+    rescheduleDate?: string;
+    rescheduleGameDate?: string;
     status?: GameStatus;
     teams?: {
         away?: ScheduleRestTeamObject;
