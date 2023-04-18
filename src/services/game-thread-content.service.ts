@@ -106,8 +106,11 @@ export class GameThreadContentService {
                     let lineupEmbed = getBaseEmbed()
                         .setTitle("Starting Lineups vs Probable Pitchers")
                         .addFields(lineupFields);
+                    let standingsEmbed = getBaseEmbed()
+                        .setTitle("Standings")
+                        .setDescription(this.standings.buildDivisionStandingsSummary(this.gameInfo.getAwayTeam(), this.gameInfo.getHomeTeam()));
 
-                    embeds.push(pitcherEmbed, lineupEmbed);
+                    embeds.push(pitcherEmbed, lineupEmbed, standingsEmbed);
 
                 // Game is Live/Final, show in-game stats table
                 // & other in-game information
