@@ -53,7 +53,8 @@ export class GameThreadContentService {
                 let day = gameDate.getDate().toString().padStart(2,"0");
                 let year = gameDate.getFullYear();
 
-                let time = date.format.toHHMM(gameDate);
+                // If start time is TBD, include that in title
+                let time = (this.gameInfo.getGameStatus().startTimeTBD? "TBD" : date.format.toHHMM(gameDate));
                 title += ` - ${wkday} ${day} ${month} ${year} @ ${time}`
             }
 
@@ -306,7 +307,7 @@ export class GameThreadContentService {
                 let day = rescheduleDate.getDate().toString().padStart(2,"0");
                 let year = rescheduleDate.getFullYear();
 
-                let time = date.format.toHHMM(rescheduleDate);
+                let time = (this.gameInfo.getGameStatus().startTimeTBD? "TBD" : date.format.toHHMM(rescheduleDate));
                 description += `\n${bold("Reschedule Date:")} ${wkday} ${day} ${month} ${year} @ ${time}`
             }
 

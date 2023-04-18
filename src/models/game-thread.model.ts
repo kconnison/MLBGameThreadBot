@@ -63,7 +63,7 @@ export class GameThread {
             this.logger.debug("Updating thread content...");
 
             return this.content.update(timecode).then(() => {
-                this.discord.editThreads(this.discordThreadRefs, this.content.getGameInfoEmbeds());
+                this.discord.editThreads(this.discordThreadRefs, this.content.getThreadTitle(), this.content.getGameInfoEmbeds());
                 this.discord.postMessages(this.discordThreadRefs, this.content.getPlayByPlayMessages());
                 if( this.gameInfo.isGameStateFinal() && !this.gameInfo.isGameStatePostponed() ) {
                     this.discord.postMessages(this.discordThreadRefs, [this.content.getFinalScoreMessage()]);

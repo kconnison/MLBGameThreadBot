@@ -105,8 +105,11 @@ export class DiscordService {
     }
 
     
-    public editThreads(threadRefs: ThreadChannel[], embeds: EmbedBuilder[]) {
+    public editThreads(threadRefs: ThreadChannel[], name: string, embeds: EmbedBuilder[]) {
         threadRefs.forEach(thread => {
+            this.logger.debug(`[THREAD_${thread.id}] Editing name...`);
+            thread.edit({ name: name });
+
             this.logger.debug(`[THREAD_${thread.id}] Fetching starting message...`);
             thread.fetchStarterMessage()
             .then((msg) => {
