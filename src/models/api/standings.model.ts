@@ -18,6 +18,7 @@ export declare type TeamStandingsRecordRestObject = {
     streak?: StreakRestObject;
     divisionRank?: string;
     leagueRank?: string;
+    wildCardRank?: string;
     sportRank?: string;
     gamesPlayed?: number;
     gamesBack?: string;
