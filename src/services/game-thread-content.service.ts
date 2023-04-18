@@ -290,7 +290,14 @@ export class GameThreadContentService {
     }
 
     private getSummaryEmbedDescription() {
-        let description = `${bold("Game Status:")} ${this.gameInfo.getGameStatus().detailedState}`;    
+        let description = "";
+
+        // If game is part of doubleheader, include which game it is
+        if( this.gameInfo.getGameMetadata().doubleHeader == "Y" ) {
+            description += `Doubleheader - Game ${this.gameInfo.getGameMetadata().gameNumber}\n`;
+        }
+
+        description += `${bold("Game Status:")} ${this.gameInfo.getGameStatus().detailedState}`;    
         
         // If game postponed, include reason & reschedule date
         if( this.gameInfo.isGameStatePostponed() ) {

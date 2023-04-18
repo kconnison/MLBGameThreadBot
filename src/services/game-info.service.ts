@@ -74,6 +74,10 @@ export class GameInfoService {
         return;
     }
 
+    public getGameMetadata() {
+        return this.gameObject?.gameData?.game || {};
+    }
+
     public getDateTime() {
         return this.gameObject?.gameData?.datetime || {};
     }
