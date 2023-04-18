@@ -39,6 +39,8 @@ export declare type ScheduleRestGameObject = {
     officialDate?: string;
     rescheduleDate?: string;
     rescheduleGameDate?: string;
+    rescheduledFrom?: string;
+    rescheduledFromDate?: string;
     status?: GameStatus;
     teams?: {
         away?: ScheduleRestTeamObject;
