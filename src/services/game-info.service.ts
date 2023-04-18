@@ -36,7 +36,9 @@ export class GameInfoService {
         let scheduleResponse, gameInfoResponse, gameContentResponse;
         [scheduleResponse, gameInfoResponse, gameContentResponse] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
 
-        this.scheduleObject = scheduleResponse?.dates?.at(0)?.games?.at(0) || {};
+        // choose latest date from schedule response (in case of postponed game)
+        let scheduleLength = scheduleResponse.dates?.length || 1;
+        this.scheduleObject = scheduleResponse?.dates?.at(scheduleLength-1)?.games?.at(0) || {};
         this.gameObject = gameInfoResponse;
         this.gameContentObject = gameContentResponse;
 
@@ -56,7 +58,10 @@ export class GameInfoService {
 
         let scheduleResponse;
         [scheduleResponse, this.gameObject, this.gameContentObject] = await Promise.all([pSchedule, pGameInfo, pGameContent]);
-        this.scheduleObject = scheduleResponse?.dates?.at(0)?.games?.at(0) || {};
+
+        // choose latest date from schedule response (in case of postponed game)
+        let scheduleLength = scheduleResponse.dates?.length || 1;
+        this.scheduleObject = scheduleResponse?.dates?.at(scheduleLength-1)?.games?.at(0) || {};
 
         // rebuild player info map with updated data
         this.parsePlayerInfo(this.gameObject);
