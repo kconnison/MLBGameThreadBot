@@ -53,8 +53,17 @@ export class GameThreadContentService {
                 let day = gameDate.getDate().toString().padStart(2,"0");
                 let year = gameDate.getFullYear();
 
-                // If start time is TBD, include that in title
-                let time = (this.gameInfo.getGameStatus().startTimeTBD? "TBD" : date.format.toHHMM(gameDate));
+                // If start time is TBD use firstPitch time if available
+                let time = date.format.toHHMM(gameDate);
+                if( this.gameInfo.getGameStatus().startTimeTBD ) {
+                    let firstPitch = this.gameInfo.getGameInfo().firstPitch;
+                    if( firstPitch ) {
+                        time = date.format.toHHMM(new Date(firstPitch));
+                    } else {
+                        time = "TBD";
+                    }
+                }
+
                 title += ` - ${wkday} ${day} ${month} ${year} @ ${time}`
             }
 
