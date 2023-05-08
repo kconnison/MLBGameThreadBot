@@ -177,7 +177,7 @@ export class GameThreadContentService {
                 let isLoggableEventType = (eventType.includes("_substitution") || eventType.includes("stolen_base") 
                     || eventType.includes("caught_stealing") || eventType.includes("balk") 
                     || eventType.includes("wild_pitch") || eventType.includes("passed_ball")
-                    || eventType.includes("error"));
+                    || (eventType.includes("pickoff") && event.details.isOut) || eventType.includes("error"));
                     
                 return isLoggableEventType || event.details.isScoringPlay;
             };
